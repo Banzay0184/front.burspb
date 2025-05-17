@@ -105,7 +105,7 @@ const categories: CategoryItem[] = [
     title: "Буровые установки"
   },
   {
-    href: "/basket",
+    href: "/Basket/BasketPage",
     iconSrc: "/image/d1bbbc.svg",
     iconAlt: "Перейти в корзину",
     title: "Корзина",

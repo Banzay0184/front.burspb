@@ -18,7 +18,7 @@ const posts: BlogPost[] = [
     image: "/image/031f8a.jpeg",
     alt: "Описание для centrobezhnyj-nasos",
     title: "Как выбрать скважинный насос",
-    url: "/statji/kak-vybrat-skvazhinnyj-nasos",
+    url: "/Statji/StatjiDetail",
     date: "2023-02-24",
     author: "Василий К.",
     views: 64,

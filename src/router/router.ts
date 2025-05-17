@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../pages/HomePage.vue';
 import CatalogPage from '../pages/Catalog/CatalogPage.vue';
 import StatjiPage from '../pages/Statji/StatjiPage.vue';
+import StatjiDetail from '../pages/Statji/StatjiDetail.vue';
 import GarantiyaPage from '../pages/Garantiya/GarantiyaPage.vue';
 import OplataPage from '../pages/Oplata/OplataPage.vue';
 import DostavkaPage from '../pages/Dostavka/DostavkaPage.vue';
@@ -9,6 +10,7 @@ import OkompaniiPage from '../pages/Okompanii/OkompaniiPage.vue';
 import KontaktyPage from '../pages/Kontakty/KontaktyPage.vue';
 import CategoryBurovyeDolota from '../pages/Catalog/CategoryBurovyeDolota.vue';
 import CatalogDetail from '../pages/Catalog/CatalogDetail.vue';
+import BasketPage from '../pages/Basket/BasketPage.vue';
 
 
 const routes = [
@@ -51,6 +53,16 @@ const routes = [
     path: '/Kontakty/KontaktyPage',
     name: 'KontaktyPage',
     component: KontaktyPage,
+  },
+  {
+    path: '/Basket/BasketPage',
+    name: 'BasketPage',
+    component: BasketPage,
+  },
+  {
+    path: '/Statji/StatjiDetail',
+    name: 'StatjiDetail',
+    component: StatjiDetail,
   },
 
   // FOR TEST
