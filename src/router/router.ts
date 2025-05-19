@@ -76,10 +76,9 @@ const routes = [
     name: 'ApiTest',
     component: ApiTest,
   },
-
   {
-    path: '/Catalog/CategoryBurovyeDolota',
-    name: 'CategoryBurovyeDolota',
+    path: '/catalog/category-:slug',
+    name: 'CategoryDetail',
     component: CategoryBurovyeDolota,
   },
   {

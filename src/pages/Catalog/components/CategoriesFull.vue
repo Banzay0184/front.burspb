@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import apiService from '../../../api/api'
+
 defineOptions({
   name: 'CategoriesFull'
 })
 
 interface CategoryItem {
+  nav_id: number
+  object_id: string
+  type: string
+  parent: boolean | string
+  icon: string | null
+  title: string
+  slug: string
+  params: {
+    title: string | null
+    is_h1: string | null
+    is_link: any
+  }
+}
+
+// Структура трансформированных категорий для отображения
+interface TransformedCategory {
   id: number
   title: string
   href: string
@@ -16,251 +34,102 @@ interface CategoryItem {
   }[]
 }
 
-const categories: CategoryItem[] = [
-  {
-    id: 1,
-    title: 'Буровые долота',
-    href: '/catalog/category-burovye-dolota',
-    img: '/image/4138f1.svg',
-    alt: 'Перейти к Буровые долота',
-    subcategories: [
-      { title: 'PDC долото', href: '/catalog/category-pdc-doloto' },
-      { title: 'Лопастные долота', href: '/catalog/category-lopastnye' },
-      { title: 'Шарошечные долота', href: '/catalog/category-sharoshechnye' },
-      { title: 'Шнековые долота', href: '/catalog/category-shnekovye-burovye-dolota' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Трубы для бурения скважин',
-    href: '/catalog/category-burilnye-truby',
-    img: '/image/4138f1.svg',
-    alt: 'Перейти к Трубы для бурения скважин',
-    subcategories: [
-      { title: 'ТБСУ', href: '/catalog/category-tbsu' },
-      { title: 'Буровые штанги', href: '/catalog/category-burovye-shtangi' },
-      { title: 'Трубы бурильные для МГБУ', href: '/catalog/category-truby-burilnye-dlya-mgbu' },
-      { title: 'Буровые замки', href: '/catalog/category-burovye-zamki' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Переходники буровые',
-    href: '/catalog/category-perehodniki-burovye',
-    img: '/image/4138f1.svg',
-    alt: 'Перейти к Переходники буровые',
-    subcategories: [
-      { title: 'Переходники переводные Н, М, НН, ММ, НМ', href: '/catalog/category-perehodnik-perevodnoj' },
-      { title: 'Переходники ПК', href: '/catalog/category-perehodnik-pk' },
-      { title: 'Фрезерные переходники П, П-1', href: '/catalog/category-frezernye-perehodniki' }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Инструмент для колонкового бурения',
-    href: '/catalog/category-kolonkovoe-burenie',
-    img: '/image/f17657.svg',
-    alt: 'Перейти к Инструмент для колонкового бурения',
-    subcategories: [
-      { title: 'Колонковые трубы', href: '/catalog/category-kolonkovye-truby' },
-      { title: 'Коронки твердосплавные', href: '/catalog/category-koronki-tverdosplavnye' },
-      { title: 'Устройство для извлечения керна', href: '/catalog/category-ustrojstvo-dlya-izvlecheniya-kerna' },
-      { title: 'Набор для колонкового бурения', href: '/catalog/category-nabor-dlya-kolonkovogo-bureniya' },
-      { title: 'Переходники для колонковой бурильной трубы', href: '/catalog/category-perehodnik-kolonkovyj' }
-    ]
-  },
-  {
-    id: 5,
-    title: 'Инструмент для вращательного бурения',
-    href: '/catalog/category-vrashshatelnoe-burenie',
-    img: '/image/8cf2d3.svg',
-    alt: 'Перейти к Инструмент для вращательного бурения',
-    subcategories: [
-      { title: 'Пикобуры для бурения', href: '/catalog/category-pikobury-dlya-bureniya' },
-      { title: 'Трубы для бурения скважин', href: '/catalog/category-burilnye-truby' },
-      { title: 'PDC долото', href: '/catalog/category-pdc-doloto' },
-      { title: 'Шарошечные долота', href: '/catalog/category-sharoshechnye' },
-      { title: 'Лопастные долота', href: '/catalog/category-lopastnye' },
-      { title: 'Переходники буровые', href: '/catalog/category-perehodniki-burovye' },
-      { title: 'Вспомогательный инструмент', href: '/catalog/category-vspomogatelnyj-instrument' }
-    ]
-  },
-  {
-    id: 6,
-    title: 'Инструмент для пневмоударного бурения',
-    href: '/catalog/category-pnevmoudarnoe-burenie',
-    img: '/image/c0fc52.svg',
-    alt: 'Перейти к Инструмент для пневмоударного бурения',
-    subcategories: [
-      { title: 'Пневмоударники', href: '/catalog/category-pnevmoudarnik' },
-      { title: 'Пневмоударные коронки', href: '/catalog/category-pnevmoudarnye-koronki' },
-      { title: 'Снаряд пневмоударный колонковый (СПК)', href: '/catalog/category-snaryad-pnevmoudarny' },
-      { title: 'Переходники переводные Н, М, НН, ММ, НМ', href: '/catalog/category-perehodnik-perevodnoj' },
-      { title: 'ТБСУ', href: '/catalog/category-tbsu' },
-      { title: 'Буровые замки', href: '/catalog/category-burovye-zamki' },
-      { title: 'Ключ шарнирный КШС', href: '/catalog/category-klyuch-sharnirnyj-kshs' },
-      { title: 'Ключ отбойный', href: '/catalog/category-klyuch-otbojnyj' }
-    ]
-  },
-  {
-    id: 7,
-    title: 'Инструмент для шарошечного бурения',
-    href: '/catalog/category-sharoshechnoe-burenie',
-    img: '/image/0cbb3c.svg',
-    alt: 'Перейти к Инструмент для шарошечного бурения',
-    subcategories: [
-      { title: 'Шарошечные долота', href: '/catalog/category-sharoshechnye' },
-      { title: 'PDC долото', href: '/catalog/category-pdc-doloto' },
-      { title: 'Переходники буровые', href: '/catalog/category-perehodniki-burovye' },
-      { title: 'Трубы для бурения скважин', href: '/catalog/category-burilnye-truby' },
-      { title: 'Вспомогательный инструмент', href: '/catalog/category-vspomogatelnyj-instrument' }
-    ]
-  },
-  {
-    id: 8,
-    title: 'Инструмент для бурения скважин на воду',
-    href: '/catalog/category-dlya-bureniya-skvazhin-na-vodu',
-    img: '/image/4138f1.svg',
-    alt: 'Перейти к Инструмент для бурения скважин на воду',
-    subcategories: [
-      { title: 'Трубы для бурения скважин', href: '/catalog/category-burilnye-truby' },
-      { title: 'PDC долото', href: '/catalog/category-pdc-doloto' },
-      { title: 'Шнековые долота', href: '/catalog/category-shnekovye-burovye-dolota' },
-      { title: 'Шарошечные долота', href: '/catalog/category-sharoshechnye' },
-      { title: 'Лопастные долота', href: '/catalog/category-lopastnye' },
-      { title: 'Переходники буровые', href: '/catalog/category-perehodniki-burovye' },
-      { title: 'Коронки твердосплавные', href: '/catalog/category-koronki-tverdosplavnye' },
-      { title: 'Колонковые трубы', href: '/catalog/category-kolonkovye-truby' },
-      { title: 'Грунтоносы', href: '/catalog/category-gruntonosy' },
-      { title: 'Вспомогательный инструмент', href: '/catalog/category-vspomogatelnyj-instrument' },
-      { title: 'Обсадные трубы', href: '/catalog/category-obsadnye-truby' },
-      { title: 'Скважинные фильтры', href: '/catalog/category-skvazhinnye-filtry' }
-    ]
-  },
-  {
-    id: 9,
-    title: 'Интрумент для шнекового бурения',
-    href: '/catalog/category-shnekovoe-burenie',
-    img: '/image/b4113b.svg',
-    alt: 'Перейти к Интрумент для шнекового бурения',
-    subcategories: [
-      { title: 'Труба для шнекового бурения', href: '/catalog/category-truba-dlya-shnekovogo-bureniya' },
-      { title: 'Шнековые долота', href: '/catalog/category-shnekovye-burovye-dolota' },
-      { title: 'Шнеки буровые', href: '/catalog/category-shneki-burovye' },
-      { title: 'Вспомогательный инструмент', href: '/catalog/category-vspomogatelnyj-instrument' },
-      { title: 'Штанги шнековые', href: '/catalog/category-shtangi-shnekovye-vrashatel' },
-      { title: 'Переходники буровые', href: '/catalog/category-perehodniki-burovye' }
-    ]
-  },
-  {
-    id: 10,
-    title: 'Аварийный инструмент',
-    href: '/catalog/category-avarijnyj-instrument',
-    img: '/image/c2e082.svg',
-    alt: 'Перейти к Аварийный инструмент',
-    subcategories: [
-      { title: 'Колокол ловильный', href: '/catalog/category-kolokol-lovilnyj' },
-      { title: 'Метчики ловильные', href: '/catalog/category-metchiki-lovilnye' }
-    ]
-  },
-  {
-    id: 11,
-    title: 'Вспомогательный инструмент',
-    href: '/catalog/category-vspomogatelnyj-instrument',
-    img: '/image/f7e482.svg',
-    alt: 'Перейти к Вспомогательный инструмент',
-    subcategories: [
-      { title: 'Вилка подкладная', href: '/catalog/category-vilka-podkladnaya' },
-      { title: 'Ключ отбойный', href: '/catalog/category-klyuch-otbojnyj' },
-      { title: 'Ключ шарнирный КШС', href: '/catalog/category-klyuch-sharnirnyj-kshs' },
-      { title: 'Хомут для обсадных труб', href: '/catalog/category-homut-dlya-obsadnyh-trub' }
-    ]
-  },
-  {
-    id: 12,
-    title: 'Обустройство скважин',
-    href: '/catalog/category-obustrojstvo-skvazhin',
-    img: '/image/919b76.svg',
-    alt: 'Перейти к Обустройство скважин',
-    subcategories: [
-      { title: 'Фильтровые сетки', href: '/catalog/category-filtrovye-setki' },
-      { title: 'Скважинные оголовки', href: '/catalog/category-skvazhinnye-ogolovki' },
-      { title: 'Обсадные трубы', href: '/catalog/category-obsadnye-truby' },
-      { title: 'Скважинные насосы', href: '/catalog/category-skvazhinnye-nasosy' },
-      { title: 'Скважинные фильтры', href: '/catalog/category-skvazhinnye-filtry' },
-      { title: 'Гидроаккумуляторы', href: '/catalog/category-gidroakkumulyatory' },
-      { title: 'Автобаки', href: '/catalog/category-avtobaki' },
-      { title: 'Трубы ПНД', href: '/catalog/category-truby-pnd' },
-      { title: 'Фитинги', href: '/catalog/category-fitingi' }
-    ]
-  },
-  {
-    id: 13,
-    title: 'Бентонит, полимеры, смазки',
-    href: '/catalog/category-bentonit-polimery-smazki',
-    img: '/image/4138f1.svg',
-    alt: 'Перейти к Бентонит, полимеры, смазки',
-    subcategories: [
-      { title: 'Бентонит', href: '/catalog/category-bentonit' },
-      { title: 'Полимеры буровые', href: '/catalog/category-polimery' },
-      { title: 'Смазки буровые', href: '/catalog/category-smazki' }
-    ]
-  },
-  {
-    id: 14,
-    title: 'Буровые насосы',
-    href: '/catalog/category-burovye-nasosy',
-    img: '/image/a19cb7.svg',
-    alt: 'Перейти к Буровые насосы',
-    subcategories: [
-      { title: 'Буровые насосы для МГБУ', href: '/catalog/selection-burovye-nasosy-dlya-mgbu' },
-      { title: 'Буровые насосы НБ4', href: '/catalog/selection-burovye-nasosy-nb4' },
-      { title: 'Буровые насосы НБ200', href: '/catalog/selection-burovye-nasosy-nb200' }
-    ]
-  },
-  {
-    id: 15,
-    title: 'Запасные части',
-    href: '/catalog/category-zapasnye-chasti',
-    img: '/image/8197a9.svg',
-    alt: 'Перейти к Запасные части',
-    subcategories: [
-      { title: 'Запасные части для буровых установок', href: '/catalog/category-dlya-burovyh-ustanovok' },
-      { title: 'Запчасти для буровых насосов', href: '/catalog/category-zapchasti-dlya-nasosov' },
-      { title: 'Шестеренчатые насосы', href: '/catalog/category-shesterenchatye-nasosy' }
-    ]
-  },
-  {
-    id: 16,
-    title: 'Буровые установки',
-    href: '/catalog/category-burovye-ustanovki',
-    img: '/image/0638dd.svg',
-    alt: 'Перейти к Буровые установки',
-    subcategories: [
-      { title: 'Буровые установки на прицепе', href: '/catalog/category-na-pricepe' },
-      { title: 'Буровые установки Pride', href: '/catalog/category-ustanovki-pride' },
-      { title: 'Буровые установки для инженерных изысканий', href: '/catalog/category-dlya-inzhenernyh-izyskanij' },
-      { title: 'Буровые установки для скважин', href: '/catalog/category-dlya-skvazhin' },
-      { title: 'Буровые установки МГБУ', href: '/catalog/category-ustanovki-mgbu' },
-      { title: 'Буровые установки на воду', href: '/catalog/category-na-vodu' },
-      { title: 'Геологические буровые установки', href: '/catalog/category-geologicheskie-ustanovki' },
-      { title: 'Гидравлические буровые установки', href: '/catalog/category-gidravlicheskie' },
-      { title: 'Гусеничные буровые установки', href: '/catalog/category-gusenichnye-ustanovki' },
-      { title: 'Малогабаритные буровые установки', href: '/catalog/category-malogabaritnye-ustanovki' },
-      { title: 'Мини буровые установки', href: '/catalog/category-mini-ustanovki' },
-      { title: 'Мобильные буровые установки', href: '/catalog/category-mobilnye-ustanovki' },
-      { title: 'Переносные буровые установки', href: '/catalog/category-perenosnye' },
-      { title: 'Самоходные гидравлические буровые установки', href: '/catalog/category-samohodnye-ustanovki' },
-      { title: 'Шнековые буровые установки', href: '/catalog/category-shnekovye' }
-    ]
-  }
-]
-
+const categories = ref<TransformedCategory[]>([])
 const activeCategory = ref<number | null>(null)
 
 const toggleCategory = (id: number) => {
   activeCategory.value = activeCategory.value === id ? null : id
 }
+
+// Функция для получения пути иконки по id
+const getIconPath = (iconClass: string | null) => {
+  if (!iconClass) return '/image/4138f1.svg' // Дефолтная иконка
+  
+  const iconMap: Record<string, string> = {
+    'icon-cat-1': '/image/0638dd.svg',
+    'icon-cat-2': '/image/0cbb3c.svg',
+    'icon-cat-3': '/image/8cf2d3.svg',
+    'icon-cat-4': '/image/b4113b.svg',
+    'icon-cat-5': '/image/f17657.svg',
+    'icon-cat-6': '/image/c0fc52.svg',
+    'icon-cat-7': '/image/919b76.svg',
+    'icon-cat-8': '/image/c2e082.svg',
+    'icon-cat-9': '/image/f7e482.svg',
+    'icon-cat-11': '/image/4138f1.svg',
+    'icon-cat-12': '/image/8197a9.svg',
+    'icon-cat-13': '/image/a19cb7.svg'
+  }
+  
+  return iconMap[iconClass] || '/image/4138f1.svg'
+}
+
+// Функция для формирования URL категории
+const getCategoryPath = (category: CategoryItem) => {
+  if (category.type === 'taxonomy') {
+    return `/catalog/category-${category.slug}`
+  } else if (category.type === 'post_type') {
+    return `/catalog/${category.slug}`
+  }
+  return `/catalog/category-${category.slug}`
+}
+
+// Функция для преобразования массива категорий в древовидную структуру
+const transformCategories = (categoriesData: CategoryItem[]) => {
+  // Создаем карту родительских категорий (id => index в массиве результатов)
+  const parentCategories: Record<string, number> = {}
+  const result: TransformedCategory[] = []
+
+  // Проходим по всем категориям и находим родительские
+  categoriesData.forEach((category) => {
+    if (category.parent === false) {
+      const transformedCategory: TransformedCategory = {
+        id: category.nav_id,
+        title: category.title,
+        href: getCategoryPath(category),
+        img: getIconPath(category.icon),
+        alt: `Перейти к ${category.title}`,
+        subcategories: []
+      }
+      parentCategories[category.nav_id.toString()] = result.length
+      result.push(transformedCategory)
+    }
+  })
+
+  // Добавляем подкатегории
+  categoriesData.forEach((category) => {
+    if (category.parent !== false) {
+      const parentId = category.parent.toString()
+      if (parentId in parentCategories) {
+        const parentIndex = parentCategories[parentId]
+        if (result[parentIndex].subcategories) {
+          result[parentIndex].subcategories!.push({
+            title: category.title,
+            href: getCategoryPath(category)
+          })
+        }
+      }
+    }
+  })
+
+  return result
+}
+
+// Функция для загрузки данных с API
+const fetchGlobalData = async () => {
+  try {
+    const response = await apiService.getGlobals()
+    if (response.data && response.data.navigation && response.data.navigation.categories_full) {
+      const categoriesData = response.data.navigation.categories_full
+      categories.value = transformCategories(categoriesData)
+    }
+  } catch (error) {
+    console.error('Ошибка при получении данных категорий:', error)
+  }
+}
+
+onMounted(() => {
+  fetchGlobalData()
+})
 </script>
 
 <template>
@@ -296,7 +165,7 @@ const toggleCategory = (id: number) => {
         ></i>
         
         <ul 
-          v-if="category.subcategories"
+          v-if="category.subcategories && category.subcategories.length > 0"
           itemprop="itemListElement" 
           itemtype="http://schema.org/ItemList"
         >

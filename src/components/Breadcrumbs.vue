@@ -1,12 +1,38 @@
 <script setup lang="ts">
+interface BreadcrumbItem {
+  title: string;
+  url?: string;
+}
 
+defineProps<{
+  items?: BreadcrumbItem[];
+}>();
 </script>
 
 <template>
 <nav class="breadcrumbs">
   <ul itemtype="http://schema.org/BreadcrumbList">
       <li itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a href="/" class="nuxt-link-active">Главная</a> <meta itemprop="position" content="1" /></li>
-      <li itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a itemprop="item">Каталог</a> <meta itemprop="position" content="2" /></li>
+      
+      <!-- Динамические хлебные крошки -->
+      <template v-if="items && items.length > 0">
+        <li 
+          v-for="(item, index) in items" 
+          :key="index" 
+          itemprop="itemListElement" 
+          itemtype="http://schema.org/ListItem"
+        >
+          <a v-if="item.url" :href="item.url" itemprop="item">{{ item.title }}</a>
+          <span v-else>{{ item.title }}</span>
+          <meta itemprop="position" :content="index + 2" />
+        </li>
+      </template>
+      
+      <!-- Дефолтная крошка для каталога, если нет других -->
+      <li v-else itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+        <a itemprop="item">Каталог</a>
+        <meta itemprop="position" content="2" />
+      </li>
   </ul>
 </nav>
 </template>

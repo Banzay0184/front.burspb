@@ -169,16 +169,25 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+// Кеш для хранения данных globals
+let globalsCache: Promise<ApiResponse<GlobalsData>> | null = null;
 
 // API сервис
 const apiService = {
-  // Метод для получения глобальных настроек
-  getGlobals: (): Promise<ApiResponse<GlobalsData>> => 
-    api.get('/globals').then(response => ({
-      data: response.data,
-      status: response.status,
-      statusText: response.statusText
-    })),
+  // Метод для получения глобальных настроек с кешированием
+  getGlobals: (): Promise<ApiResponse<GlobalsData>> => {
+    if (globalsCache === null) {
+      // Если кеш пуст, выполняем запрос и сохраняем промис в кеше
+      globalsCache = api.get('/globals').then(response => ({
+        data: response.data,
+        status: response.status,
+        statusText: response.statusText
+      }));
+    }
+    
+    // Возвращаем кешированный результат
+    return globalsCache;
+  },
   
   // Методы для получения данных о продуктах
   products: {

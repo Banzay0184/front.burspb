@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue';
+
 interface Props {
   title?: string
   showFilter?: boolean
@@ -8,7 +10,7 @@ interface Props {
   }>
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: 'Товары каталога',
   showFilter: true,
   sortOptions: () => [
@@ -20,6 +22,26 @@ withDefaults(defineProps<Props>(), {
     { value: 'name-desc', label: 'По названию (Я-А)' }
   ]
 })
+
+const emit = defineEmits(['sort-change', 'price-filter-change']);
+
+// Состояния фильтров
+const minPrice = ref<string>('');
+const maxPrice = ref<string>('');
+const selectedSort = ref<string>('popularity-desc');
+
+// Обработчики изменений
+const handleSortChange = (event: Event) => {
+  const selectElement = event.target as HTMLSelectElement;
+  selectedSort.value = selectElement.value;
+  emit('sort-change', selectedSort.value);
+};
+
+const handlePriceChange = () => {
+  const min = minPrice.value ? minPrice.value : null;
+  const max = maxPrice.value ? maxPrice.value : null;
+  emit('price-filter-change', min, max);
+};
 </script>
 
 <template>
@@ -32,14 +54,36 @@ withDefaults(defineProps<Props>(), {
         <li class="filter-price">
           <span>Цена</span>
           <div class="row">
-            <div><label>От</label> <input type="number" class="input-number" /></div>
-            <div><label>До</label> <input type="number" class="input-number" /></div>
+            <div>
+              <label for="price-min">От</label> 
+              <input 
+                id="price-min"
+                type="number" 
+                class="input-number" 
+                v-model="minPrice"
+                @change="handlePriceChange" 
+              />
+            </div>
+            <div>
+              <label for="price-max">До</label> 
+              <input 
+                id="price-max"
+                type="number" 
+                class="input-number" 
+                v-model="maxPrice"
+                @change="handlePriceChange" 
+              />
+            </div>
           </div>
         </li>
         <li class="filter-sort">
           <span>Сортировка</span>
           <div>
-            <select class="select">
+            <select 
+              class="select" 
+              v-model="selectedSort"
+              @change="handleSortChange"
+            >
               <option 
                 v-for="option in sortOptions" 
                 :key="option.value" 
