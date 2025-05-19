@@ -1,60 +1,156 @@
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ModalWindow from '../../../components/ModalWindow.vue';
 import Tabs from './Tabs.vue';
-import { ref } from 'vue';
+import { CartService } from '../../../api/api';
 
-// Основные данные продукта
-const productData = {
-  title: 'Долото III лопастное Д170 З-88н (Пика)',
-  image: 'https://burspb.com/api/files/200.jpg.webp',
-  price: '9 800',
-  currency: 'RUB',
-  availability: true,
-  sku: '00262',
-  weight: '9 кг',
+// Интерфейс для данных продукта
+interface ProductProps {
+  id: number;
+  title: string;
+  image: string;
+  price: string;
+  currency: string;
+  availability: boolean;
+  sku: string;
+  weight: string;
   delivery: {
-    region: 'Сегодня — завтра',
-    pickup: 'Сегодня'
-  },
-  description: [
-    ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
-    'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
-    'Благодаря своим техническим характеристикам...',
-    'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
-    ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
-    'Благодаря своим техническим характеристикам...',
-    'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
-    ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
-    'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
-    'Благодаря своим техническим характеристикам...',
-    'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
-    ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
-    'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
-    'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
-    ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
-    'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
-    'Благодаря своим техническим характеристикам...'],
-  ],
-  tabs: [
-    { title: 'Описание', active: true },
-    { title: 'Как купить', active: false },
-    { title: 'Оплата', active: false },
-    { title: 'Доставка', active: false },
-    { title: 'Гарантия', active: false }
-  ]
-};
+    region: string;
+    pickup: string;
+  };
+  description: string[][];
+  tabs: {
+    title: string;
+    active: boolean;
+  }[];
+  slug: string;
+}
 
-// Состояние модального окна (оставляем как в исходнике)
+// Получаем данные продукта из пропсов, с возможностью дефолтных значений
+const props = withDefaults(defineProps<{
+  productData?: ProductProps;
+}>(), {
+  productData: () => ({
+    id: 0,
+    title: 'Долото III лопастное Д170 З-88н (Пика)',
+    image: 'https://burspb.com/api/files/200.jpg.webp',
+    price: '9 800',
+    currency: 'RUB',
+    availability: true,
+    sku: '00262',
+    weight: '9 кг',
+    delivery: {
+      region: 'Сегодня — завтра',
+      pickup: 'Сегодня'
+    },
+    description: [
+      ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
+      'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
+      'Благодаря своим техническим характеристикам...',
+      'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
+      ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
+      'Благодаря своим техническим характеристикам...',
+      'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
+      ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
+      'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
+      'Благодаря своим техническим характеристикам...',
+      'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
+      ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
+      'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
+      'Долота III лопастные Д170 З-88н (Пика) - это надежное и эффективное решение...'],
+      ['Долота III лопастные Д170 З-88н (Пика) - это высококачественное оборудование...',
+      'Долото Д170 З-88н (Пика) изготовлено из прочных материалов...',
+      'Благодаря своим техническим характеристикам...'],
+    ],
+    tabs: [
+      { title: 'Описание', active: true },
+      { title: 'Как купить', active: false },
+      { title: 'Оплата', active: false },
+      { title: 'Доставка', active: false },
+      { title: 'Гарантия', active: false }
+    ],
+    slug: 'doloto-III-lopastnoe-d170'
+  })
+});
+
+// Эмиты для событий
+const emit = defineEmits(['add-to-cart']);
+
+// Состояние модального окна
 const isModalVisible = ref(false);
 
+// Проверяем, есть ли товар в корзине
+const isInCart = computed(() => {
+  return CartService.isInCart(props.productData.id);
+});
+
+// Количество товара в корзине
+const itemQuantity = computed(() => {
+  return CartService.getItemQuantity(props.productData.id);
+});
+
+// Открыть модальное окно
 const openModal = () => {
   isModalVisible.value = true;
 };
 
+// Закрыть модальное окно
 const closeModal = () => {
   isModalVisible.value = false;
 };
 
+// Добавить товар в корзину
+const addToCart = () => {
+  if (!props.productData.availability) return;
+  
+  if (isInCart.value) {
+    // Если товар уже в корзине, увеличиваем количество
+    CartService.updateItemQuantity(props.productData.id, itemQuantity.value + 1);
+  } else {
+    // Если товара еще нет, добавляем его
+    CartService.addToCart({
+      id: props.productData.id,
+      title: props.productData.title,
+      price: props.productData.price,
+      image: props.productData.image,
+      articul: props.productData.sku,
+      quantity: 1,
+      slug: props.productData.slug,
+      available: props.productData.availability
+    });
+  }
+  
+  // Сообщаем родительскому компоненту о добавлении товара
+  emit('add-to-cart');
+};
+
+// Уменьшить количество товара
+const decreaseQuantity = () => {
+  if (itemQuantity.value > 1) {
+    CartService.updateItemQuantity(props.productData.id, itemQuantity.value - 1);
+  }
+};
+
+// Увеличить количество товара
+const increaseQuantity = () => {
+  CartService.updateItemQuantity(props.productData.id, itemQuantity.value + 1);
+};
+
+// Обработчик события изменения корзины
+const handleCartChange = () => {
+  // Для реактивного обновления компонента
+  // В computed свойствах isInCart и itemQuantity уже есть логика получения актуальных данных
+};
+
+// Добавляем слушатель события cart-changed при монтировании
+onMounted(() => {
+  window.addEventListener('cart-changed', handleCartChange);
+});
+
+// Удаляем слушатель события при размонтировании
+onUnmounted(() => {
+  window.removeEventListener('cart-changed', handleCartChange);
+});
 </script>
 
 <template>
@@ -102,7 +198,26 @@ const closeModal = () => {
                     <div class="product__summary__row">
                         <div class="product__summary__col product__summary__col--basket">
                             <div class="product__summary__col--basket--actions">
-                                <span class="button-wrapper"><button class="button button--blue button--basket">В корзину</button></span>
+                                <!-- Показываем разные кнопки в зависимости от того, есть ли товар в корзине -->
+                                <span v-if="!isInCart" class="button-wrapper">
+                                  <button 
+                                    class="button button--blue button--basket"
+                                    @click="addToCart"
+                                    :disabled="!productData.availability"
+                                  >В корзину</button>
+                                </span>
+                                <div v-else class="basket__qty product__basket__qty">
+                                  <span 
+                                    class="basket__qty__action basket__qty__action--minus" 
+                                    :class="{ inactive: itemQuantity <= 1 }"
+                                    @click="decreaseQuantity"
+                                  >-</span>
+                                  <span class="product__basket__qty-value">{{ itemQuantity }}</span>
+                                  <span 
+                                    class="basket__qty__action basket__qty__action--plus"
+                                    @click="increaseQuantity"
+                                  >+</span>
+                                </div>
                             </div>
                         </div>
                         <div class="product__summary__col">
@@ -127,3 +242,52 @@ const closeModal = () => {
     <ModalWindow :is-visible="isModalVisible" @close="closeModal"></ModalWindow>
 </article>
 </template>
+
+<style lang="scss" scoped>
+.product__basket__qty {
+  display: inline-flex;
+  align-items: center;
+}
+
+.product__basket__qty-value {
+  margin: 0 10px;
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.basket__qty {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  line-height: 1
+}
+
+.basket__qty__action {
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 50%;
+  background: #006079;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer
+}
+
+.basket__qty__action:hover {
+  background: #0cf
+}
+
+.basket__qty__action--minus.inactive {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.basket__qty__action--minus.inactive:hover {
+  background: #006079
+}
+</style>

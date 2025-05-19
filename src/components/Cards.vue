@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { CartService } from '../api/api'
 
 interface Card {
   id: number
@@ -11,6 +12,8 @@ interface Card {
   articul: string
   oldPrice: string
   currentPrice: string
+  showOldPrice?: boolean
+  slug: string
 }
 
 const props = defineProps({
@@ -28,16 +31,44 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['addToCart'])
+const emit = defineEmits(['add-to-cart'])
 
 const cards = ref<Card[]>([...props.initialCards])
 const isLoading = ref(false)
 const hasMoreCards = ref(props.additionalCards.length > 0)
 
-const addToCart = (cardId: number) => {
-  emit('addToCart', cardId)
+// Метод для добавления товара в корзину
+const addToCart = (card: Card) => {
+  if (!card.available) return;
+  
+  // Передаем действие в родительский компонент
+  emit('add-to-cart', card.id);
 }
 
+// Проверяем, есть ли товар в корзине
+const isInCart = (id: number): boolean => {
+  return CartService.isInCart(id);
+}
+
+// Количество товара в корзине
+const getItemQuantity = (id: number): number => {
+  return CartService.getItemQuantity(id);
+}
+
+// Изменение количества товара в корзине
+const increaseQuantity = (id: number) => {
+  const currentQuantity = CartService.getItemQuantity(id);
+  CartService.updateItemQuantity(id, currentQuantity + 1);
+}
+
+const decreaseQuantity = (id: number) => {
+  const currentQuantity = CartService.getItemQuantity(id);
+  if (currentQuantity > 1) {
+    CartService.updateItemQuantity(id, currentQuantity - 1);
+  }
+}
+
+// Загрузить дополнительные карточки
 const loadMoreCards = () => {
   if (!props.loadMore || !hasMoreCards.value) return
   
@@ -59,6 +90,20 @@ const loadMoreCards = () => {
     isLoading.value = false
   }, 500)
 }
+
+// Обновляем карточки при изменении корзины
+const handleCartChange = () => {
+  // Принудительное обновление для реактивности
+  cards.value = [...cards.value];
+};
+
+onMounted(() => {
+  window.addEventListener('cart-changed', handleCartChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('cart-changed', handleCartChange);
+});
 </script>
 
 <template>
@@ -75,11 +120,11 @@ const loadMoreCards = () => {
           />
         </div>
         <div class="card__inner">
-          <RouterLink :to="card.link">
-            <h2 itemprop="headline" class="card__title card__title--card">
+          <h2 itemprop="headline" class="card__title card__title--card">
+            <RouterLink :to="card.link">
               {{ card.title }}
-            </h2>
-          </RouterLink>
+            </RouterLink>
+          </h2>
           <div class="card__meta">
             <div class="card__meta__row" style="align-items: center;">
               <div 
@@ -96,7 +141,7 @@ const loadMoreCards = () => {
             </div>
           </div>
           <div class="card__price">
-            <span class="card__price__old">{{ card.oldPrice }}</span> 
+            <span v-if="card.showOldPrice || card.oldPrice" class="card__price__old">{{ card.oldPrice }}</span> 
             <span class="card__price__current">{{ card.currentPrice }}</span>
           </div>
           <div class="card__actions">
@@ -112,13 +157,29 @@ const loadMoreCards = () => {
             </div>
             <div>
               <span class="button-wrapper">
+                <!-- Показываем разные кнопки в зависимости от того, есть ли товар в корзине -->
                 <button 
-                  @click="addToCart(card.id)" 
+                  v-if="!isInCart(card.id)"
+                  @click="addToCart(card)" 
                   class="button button--blue button--basket"
                   :disabled="!card.available"
                 >
                   В корзину
                 </button>
+                <div v-else class="in-cart-controls">
+                  <div class="basket__qty">
+                    <span 
+                      class="basket__qty__action basket__qty__action--minus" 
+                      :class="{ inactive: getItemQuantity(card.id) <= 1 }"
+                      @click="decreaseQuantity(card.id)"
+                    >-</span>
+                    <span class="in-cart-quantity">{{ getItemQuantity(card.id) }}</span>
+                    <span 
+                      class="basket__qty__action basket__qty__action--plus"
+                      @click="increaseQuantity(card.id)"
+                    >+</span>
+                  </div>
+                </div>
               </span>
             </div>
           </div>
@@ -142,5 +203,52 @@ const loadMoreCards = () => {
 .card__meta__artikul {
     display: flex;
     gap: 2px;
+}
+
+.in-cart-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.in-cart-quantity {
+  margin: 0 5px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.basket__qty {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  line-height: 1
+}
+
+.basket__qty__action {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 50%;
+  background: #006079;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer
+}
+
+.basket__qty__action:hover {
+  background: #0cf
+}
+
+.basket__qty__action--minus.inactive {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.basket__qty__action--minus.inactive:hover {
+  background: #006079
 }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import apiService from '../api/api';
+import { CartService } from '../api/api';
 
 interface CategoryItem {
   href: string;
@@ -11,6 +12,7 @@ interface CategoryItem {
 }
 
 const categories = ref<CategoryItem[]>([]);
+const cartItemsCount = ref(0);
 
 const getIconPath = (iconClass: string) => {
   // Карта соответствия классов иконок и путей к изображениям
@@ -31,6 +33,10 @@ const getIconPath = (iconClass: string) => {
   };
   
   return iconMap[iconClass] || '/image/4138f1.svg'; // Значение по умолчанию
+};
+
+const updateCartCount = () => {
+  cartItemsCount.value = CartService.getCartItemsCount();
 };
 
 const fetchGlobalData = async () => {
@@ -62,8 +68,18 @@ const fetchGlobalData = async () => {
   }
 };
 
+const handleCartChange = () => {
+  updateCartCount();
+};
+
 onMounted(() => {
   fetchGlobalData();
+  updateCartCount();
+  window.addEventListener('cart-changed', handleCartChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('cart-changed', handleCartChange);
 });
 </script>
 
@@ -98,10 +114,15 @@ onMounted(() => {
                 :alt="item.iconAlt" 
                 loading="lazy" 
               />
-            </span>
 
-            <!-- for basket-->
-            <!-- <span class="categories__item__icon__basket__value">1</span> -->
+              <!-- Показ количества товаров в корзине -->
+              <span 
+                v-if="item.isBasket && cartItemsCount > 0" 
+                class="categories__item__icon__basket__value"
+              >
+                {{ cartItemsCount }}
+              </span>
+            </span>
              
             <span class="categories__item__title">{{ item.title }}</span>
           </a>
@@ -110,3 +131,25 @@ onMounted(() => {
     </ul>
   </nav>
 </template>
+
+<style lang="scss" scoped>
+.categories__item__icon__basket__value {
+  position: absolute;
+  top: 30px;
+  right: -5px;
+  background-color: #f00;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.categories__item__basket {
+  position: relative;
+}
+</style>

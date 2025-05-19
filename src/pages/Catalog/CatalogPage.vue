@@ -5,6 +5,7 @@ import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
 import CategoriesFull from './components/CategoriesFull.vue';
+import { CartService } from '../../api/api';
 
 // Состояние компонента
 const cardsList = ref<any[]>([]);
@@ -36,22 +37,53 @@ const fetchProducts = async () => {
     if (sortType.value) {
       params.append('sort', sortType.value);
     }
-    if (priceMin.value) {
-      params.append('price_min', priceMin.value);
+    
+    // Добавляем проверку на числовые значения для цены
+    if (priceMin.value !== null && priceMin.value !== '') {
+      const minPrice = parseInt(priceMin.value);
+      if (!isNaN(minPrice) && minPrice >= 0) {
+        params.append('price_min', minPrice.toString());
+        console.log('Добавлен параметр price_min:', minPrice);
+      }
     }
-    if (priceMax.value) {
-      params.append('price_max', priceMax.value);
+    
+    if (priceMax.value !== null && priceMax.value !== '') {
+      const maxPrice = parseInt(priceMax.value);
+      if (!isNaN(maxPrice) && maxPrice >= 0) {
+        params.append('price_max', maxPrice.toString());
+        console.log('Добавлен параметр price_max:', maxPrice);
+      }
     }
     
     // Выполняем запрос к API
     const queryString = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`https://burspb.com/api/data/v1/products/${queryString}`);
+    const apiUrl = `https://burspb.com/api/data/v1/products/${queryString}`;
+    console.log('Запрос к API:', apiUrl);
+    
+    // Устанавливаем таймаут для запроса
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+    
+    const response = await fetch(apiUrl, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`Ошибка загрузки данных: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Ошибка загрузки данных: ${response.status} ${response.statusText}. ${errorText || ''}`);
     }
     
     const data = await response.json();
+    console.log('Полученные данные:', data);
+    
+    if (data.params) {
+      console.log('Параметры, полученные от API:', data.params);
+    }
     
     // Обрабатываем данные пагинации
     if (data.pagination) {
@@ -60,26 +92,39 @@ const fetchProducts = async () => {
       postsPerPage.value = data.pagination.posts_per_page || 24;
     }
     
+    // Проверяем наличие данных в ответе
+    if (!data.posts || !Array.isArray(data.posts)) {
+      throw new Error('Некорректный формат данных: отсутствует список товаров');
+    }
+    
     // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
     cardsList.value = data.posts.map((product: any) => ({
       id: product.id,
-      title: product.title.length > 40 ? `${product.title.substring(0, 40)}…` : product.title,
+      title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : product.title,
       link: `/catalog/product-${product.slug}`,
-      image: product.img.webp_square_350 || product.img.square_350 || '',
-      alt: product.img.alt?.description || product.title,
-      available: product.meta.availability,
-      articul: product.meta.artikul || '',
-      oldPrice: product.meta.price_old ? `${product.meta.price_old} ₽` : '',
-      currentPrice: `${product.meta.price} ₽`,
-      showOldPrice: !!product.meta.price_old
+      image: product.img?.webp_square_350 || product.img?.square_350 || '',
+      alt: product.img?.alt?.description || product.title,
+      available: product.meta?.availability || false,
+      articul: product.meta?.artikul || '',
+      oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+      currentPrice: `${product.meta?.price || 0} ₽`,
+      showOldPrice: !!product.meta?.price_old,
+      slug: product.slug
     }));
     
     // Очищаем дополнительные карточки, так как теперь используем пагинацию
     cardsListAdditional.value = [];
     
-  } catch (err) {
+  } catch (err: any) {
     console.error('Ошибка при получении данных продуктов:', err);
-    error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    
+    if (err.name === 'AbortError') {
+      error.value = 'Превышено время ожидания ответа от сервера. Пожалуйста, попробуйте позже.';
+    } else {
+      error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    }
+    
+    cardsList.value = []; // Очищаем список товаров при ошибке
   } finally {
     isLoading.value = false;
   }
@@ -107,8 +152,27 @@ const handlePriceFilterChange = (min: string | null, max: string | null) => {
 };
 
 const addToCart = (id: number) => {
-  console.log('Добавлено в корзину:', id);
-  // Логика добавления в корзину
+  // Находим товар в списке
+  const product = cardsList.value.find(item => item.id === id);
+  if (product && product.available) {
+    // Если товар уже в корзине, увеличиваем количество
+    if (CartService.isInCart(id)) {
+      const currentQuantity = CartService.getItemQuantity(id);
+      CartService.updateItemQuantity(id, currentQuantity + 1);
+    } else {
+      // Добавляем новый товар в корзину
+      CartService.addToCart({
+        id: product.id,
+        title: product.title,
+        price: product.currentPrice,
+        image: product.image,
+        articul: product.articul,
+        quantity: 1,
+        slug: product.slug,
+        available: product.available
+      });
+    }
+  }
 };
 
 // Загружаем данные при монтировании компонента
@@ -154,13 +218,13 @@ onMounted(() => {
                   </div>
 
                   <!-- Список товаров -->
-                  <Cards
+                <Cards
                     v-else
-                    :initial-cards="cardsList" 
-                    :additional-cards="cardsListAdditional"
+                  :initial-cards="cardsList" 
+                  :additional-cards="cardsListAdditional"
                     :load-more="false"
-                    @add-to-cart="addToCart"
-                  />
+                  @add-to-cart="addToCart"
+                />
 
                   <!-- Пагинация -->
                   <Pagination 

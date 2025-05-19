@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import CategoryNested from '../../components/CategoryNested.vue';
@@ -7,6 +7,7 @@ import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
 import apiService from '../../api/api';
+import { CartService } from '../../api/api';
 
 // Получение параметров маршрута
 const route = useRoute();
@@ -72,6 +73,8 @@ const fetchCategoryData = async () => {
         title: cat.title,
         url: `/catalog/category-${cat.slug}`
       }));
+    } else {
+      nestedCategories.value = [];
     }
     
     // Обработка товаров
@@ -84,9 +87,13 @@ const fetchCategoryData = async () => {
         alt: product.img.alt?.description || product.title,
         available: product.meta.availability,
         articul: product.meta.artikul || '',
-        oldPrice: '',
-        currentPrice: `${product.meta.price} ₽`
+        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+        currentPrice: `${product.meta.price} ₽`,
+        showOldPrice: !!product.meta?.price_old,
+        slug: product.slug
       }));
+    } else {
+      cardsList.value = [];
     }
     
     // Пагинация
@@ -98,6 +105,8 @@ const fetchCategoryData = async () => {
   } catch (err) {
     console.error('Ошибка при получении данных категории:', err);
     error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+    cardsList.value = [];
+    nestedCategories.value = [];
   } finally {
     isLoading.value = false;
   }
@@ -105,16 +114,44 @@ const fetchCategoryData = async () => {
 
 // Обработка добавления в корзину
 const addToCart = (id: number) => {
-  console.log('Добавлено в корзину:', id);
-  // Логика добавления в корзину
+  const product = cardsList.value.find(item => item.id === id);
+  if (product && product.available) {
+    // Если товар уже в корзине, увеличиваем количество
+    if (CartService.isInCart(id)) {
+      const currentQuantity = CartService.getItemQuantity(id);
+      CartService.updateItemQuantity(id, currentQuantity + 1);
+    } else {
+      // Добавляем новый товар в корзину
+      CartService.addToCart({
+        id: product.id,
+        title: product.title,
+        price: product.currentPrice,
+        image: product.image,
+        articul: product.articul,
+        quantity: 1,
+        slug: product.slug,
+        available: product.available
+      });
+    }
+  }
 };
 
 // Обработка изменения страницы
 const handlePageChange = (page: number) => {
   currentPage.value = page;
-  // Здесь должна быть логика загрузки данных для новой страницы
+  // Прокрутка страницы вверх при смене страницы
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   fetchCategoryData();
 };
+
+// Наблюдение за изменением параметра slug в URL
+watch(() => route.params.slug, (newSlug, oldSlug) => {
+  if (newSlug !== oldSlug) {
+    console.log(`Категория изменена: ${oldSlug} -> ${newSlug}`);
+    fetchCategoryData();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}, { immediate: true });
 
 // Инициализация загрузки данных
 onMounted(() => {
@@ -166,6 +203,11 @@ onMounted(() => {
           />
         </section>
 
+        <!-- Сообщение, если товаров нет -->
+        <div v-else class="no-products">
+          В данной категории товары отсутствуют.
+        </div>
+
         <!-- SEO контент -->
         <section v-if="seoContent" class="section oes">
           <div class="content" v-html="seoContent"></div>
@@ -190,6 +232,16 @@ onMounted(() => {
   padding: 40px;
   font-size: 1.2em;
   color: #666;
+}
+
+.no-products {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2em;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  margin-bottom: 20px;
 }
 </style>
 

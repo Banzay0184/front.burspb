@@ -21,7 +21,6 @@ const fetchPopularItems = async () => {
   
   try {
     const response = await apiService.blocks.getPopular();
-
     
     if (response.data && Array.isArray(response.data.content)) {
       popularItems.value = response.data.content.map((item: any) => ({
@@ -29,13 +28,14 @@ const fetchPopularItems = async () => {
         title: item.title || '',
         description: item.description || undefined,
         imageUrl: item.image?.webp_full || item.image?.full || '',
-        link: '/category/' + item.url?.id || '/category/slug/' + item.url?.slug
+        link: item.url?.slug ? `/catalog/category-${item.url.slug}` : `/catalog/CatalogPage`
       }));
       
     } else {
       hasError.value = true;
     }
   } catch (error) {
+    console.error('Ошибка при загрузке популярных категорий:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;
@@ -123,7 +123,7 @@ onMounted(() => {
       <div class="popular-side">
         <div 
           class="popular__item popular__item--4" 
-          :style="`background-image: url('${popularItems[3].imageUrl}')`"
+            :style="`background-image: url('${popularItems[3].imageUrl}')`"
         >
           <div class="popular__item__content">
             <h3 class="popular__item__content__title">{{ popularItems[3].title }}</h3>
@@ -183,6 +183,6 @@ onMounted(() => {
   </section>
 </template>
 
-
-<style scoped>
+<style lang="scss" scoped>
+/* Стили остаются без изменений */
 </style>

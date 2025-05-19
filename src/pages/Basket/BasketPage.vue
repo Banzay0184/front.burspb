@@ -1,48 +1,147 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { CartService } from '../../api/api';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 
+// Состояние корзины
+const cartItems = ref<any[]>([]);
+const isLoading = ref(true);
+
+// Хлебные крошки
+const breadcrumbs = ref([
+  { title: 'Корзина', url: '' }
+]);
+
+// Загрузка данных корзины
+const loadCart = () => {
+  isLoading.value = true;
+  cartItems.value = CartService.getCart();
+  isLoading.value = false;
+};
+
+// Вычисляемые свойства
+const isCartEmpty = computed(() => cartItems.value.length === 0);
+const cartTotal = computed(() => {
+  return CartService.getCartTotal().toLocaleString('ru-RU');
+});
+const cartWeight = computed(() => {
+  // Вычисляем общий вес товаров в корзине (если данные о весе есть)
+  let totalWeight = 0;
+  cartItems.value.forEach(item => {
+    if (item.weight) {
+      // Предполагаем, что вес может быть указан в формате "9 кг"
+      const weightValue = parseFloat(item.weight.replace(/[^\d.,]/g, '').replace(',', '.'));
+      if (!isNaN(weightValue)) {
+        totalWeight += weightValue * item.quantity;
+      }
+    }
+  });
+  return totalWeight.toFixed(2);
+});
+
+// Обработчики событий
+const handleQuantityChange = (id: number, quantity: number) => {
+  CartService.updateItemQuantity(id, quantity);
+  loadCart();
+};
+
+const increaseQuantity = (id: number) => {
+  const item = cartItems.value.find(item => item.id === id);
+  if (item) {
+    handleQuantityChange(id, item.quantity + 1);
+  }
+};
+
+const decreaseQuantity = (id: number) => {
+  const item = cartItems.value.find(item => item.id === id);
+  if (item && item.quantity > 1) {
+    handleQuantityChange(id, item.quantity - 1);
+  }
+};
+
+const removeItem = (id: number) => {
+  CartService.removeFromCart(id);
+  loadCart();
+};
+
+const clearCart = () => {
+  CartService.clearCart();
+  loadCart();
+};
+
+// Инициализация
+onMounted(() => {
+  loadCart();
+  // Слушаем событие изменения корзины
+  window.addEventListener('cart-changed', loadCart);
+});
+
+// Очистка слушателей при размонтировании
+onUnmounted(() => {
+  window.removeEventListener('cart-changed', loadCart);
+});
 </script>
 
 <template>
   <main class="main">
     <div class="wrapper">
-      <Breadcrumbs />
-      <article class="post">
+      <Breadcrumbs :items="breadcrumbs" />
+      
+      <!-- Показываем содержимое корзины, если в ней есть товары -->
+      <article v-if="!isCartEmpty" class="post">
         <header>
           <h1 class="title post__title">Корзина</h1>
         </header>
         <section class="content post__content">
           <table class="basket__list">
             <tbody>
-              <tr class="basket__list__item">
+              <tr v-for="item in cartItems" :key="item.id" class="basket__list__item">
                 <td class="basket__list__item__cell basket__list__item__cell--thumb">
-                  <span style="background-image: url('https://burspb.com/api/files/ замок-350x350.jpg.webp');"></span>
+                  <span :style="`background-image: url('${item.image}');`"></span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--title">
-                  <a href="/catalog/product-burovoj-zamok-z-50-mtbsu" class="">
-                    Буровой замок З-50 (М)ТБСУ
-                  </a>
+                  <RouterLink :to="`/catalog/product-${item.slug}`">
+                    {{ item.title }}
+                  </RouterLink>
                   <span class="basket__list__item__cell--title-price">
-                    Цена за ед. 2900 ₽
+                    Цена за ед. {{ item.price }}
                   </span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--artikul">
                   <span class="basket__list__item__cell__title">Артикул:</span>
-                  <span>00366</span>
+                  <span>{{ item.articul }}</span>
                 </td>
-                <td class="basket__list__item__cell basket__list__item__cell--weight"></td>
+                <td class="basket__list__item__cell basket__list__item__cell--weight">
+                  <span v-if="item.weight">{{ item.weight }}</span>
+                </td>
                 <td class="basket__list__item__cell basket__list__item__cell--qty">
                   <div class="basket__qty">
-                    <span class="basket__qty__action basket__qty__action--minus inactive">-</span>
-                    <input type="number" min="1" class="input-number input-number--basket__qty">
-                    <span class="basket__qty__action basket__qty__action--plus">+</span>
+                    <span 
+                      class="basket__qty__action basket__qty__action--minus" 
+                      :class="{ inactive: item.quantity <= 1 }"
+                      @click="decreaseQuantity(item.id)"
+                    >-</span>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      class="input-number input-number--basket__qty"
+                      :value="item.quantity"
+                      @change="(e) => handleQuantityChange(item.id, parseInt((e.target as HTMLInputElement).value, 10))"
+                    >
+                    <span 
+                      class="basket__qty__action basket__qty__action--plus"
+                      @click="increaseQuantity(item.id)"
+                    >+</span>
                   </div>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--price">
-                  <span>2900 ₽</span>
+                  <span>{{ (parseFloat(item.price.replace(/\s+/g, '').replace('₽', '')) * item.quantity).toLocaleString('ru-RU') }} ₽</span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--delete">
-                  <button class="basket__list__item__cell__action basket__list__item__cell__action--delete">x</button>
+                  <button 
+                    class="basket__list__item__cell__action basket__list__item__cell__action--delete"
+                    @click="removeItem(item.id)"
+                  >x</button>
                 </td>
               </tr>
             </tbody>
@@ -52,24 +151,33 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
               <div class="col col--left">
                 <div>
                   <span class="basket__summary__title">Итого:</span>
-                  <span class="basket__summary__value">2900 ₽</span>
+                  <span class="basket__summary__value">{{ cartTotal }} ₽</span>
                 </div>
                 <div>
                   <span class="basket__summary__title">Вес:</span>
-                  <span class="basket__summary__value">0 кг</span>
+                  <span class="basket__summary__value">{{ cartWeight }} кг</span>
                 </div>
               </div>
               <div class="col col--right">
                 <div>
                   <span class="button-wrapper">
-                    <a href="/catalog" class="button button--blue button--outline">Продолжить
-                      покупки</a>
+                    <RouterLink to="/catalog/CatalogPage" class="button button--blue button--outline">
+                      Продолжить покупки
+                    </RouterLink>
                   </span>
                 </div>
                 <div>
                   <span class="button-wrapper">
-                    <a href="/basket/confirm" class="button button--blue button--blue">Оформить
-                      заказ</a>
+                    <RouterLink to="/basket/confirm" class="button button--blue button--blue">
+                      Оформить заказ
+                    </RouterLink>
+                  </span>
+                </div>
+                <div style="margin-top: 10px;">
+                  <span class="button-wrapper">
+                    <button @click="clearCart" class="button button--outline">
+                      Очистить корзину
+                    </button>
                   </span>
                 </div>
               </div>
@@ -77,8 +185,9 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
           </div>
         </section>
       </article>
-      <!-- If Basket Empty -->
-      <article class="post">
+      
+      <!-- Показываем сообщение о пустой корзине, если в ней нет товаров -->
+      <article v-else class="post">
         <header>
           <h1 class="title post__title">Корзина</h1>
         </header>
@@ -86,8 +195,13 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
           <div>
             <h3>Ваша корзина пуста</h3>
             <p>Выберите нужные позиции из каталога продукции и добавьте их в корзину</p>
-            <div class="empty-basket-action"><span data-v-820233b6="" class="button-wrapper"><a data-v-820233b6=""
-                  href="/catalog" class="button button--blue button--outline">В каталог →</a></span></div>
+            <div class="empty-basket-action">
+              <span class="button-wrapper">
+                <RouterLink to="/catalog/CatalogPage" class="button button--blue button--outline">
+                  В каталог →
+                </RouterLink>
+              </span>
+            </div>
           </div>
         </section>
       </article>
@@ -102,6 +216,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
   padding-right: 3rem;
   max-width: 30rem;
 }
+
 a.button {
   width: fit-content;
   text-decoration: none
@@ -146,7 +261,8 @@ a.button--blue.button--outline {
 }
 
 .basket__qty__action--minus.inactive {
-  cursor: default
+  cursor: default;
+  opacity: 0.5;
 }
 
 .basket__qty__action--minus.inactive:hover {
@@ -163,6 +279,11 @@ a.button--blue.button--outline {
 
 .product__header .basket__qty__action--plus {
   margin-left: 1rem
+}
+
+.input-number--basket__qty {
+  width: 40px;
+  text-align: center;
 }
 
 @media screen and (min-width:1280px) {

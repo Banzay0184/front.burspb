@@ -82,8 +82,8 @@ const routes = [
     component: CategoryBurovyeDolota,
   },
   {
-    path: '/Catalog/CatalogDetail',
-    name: 'CatalogDetail',
+    path: '/catalog/product-:slug',
+    name: 'ProductDetail',
     component: CatalogDetail,
   },
 ];

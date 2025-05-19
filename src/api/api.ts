@@ -424,3 +424,109 @@ const apiService = {
 };
 
 export default apiService;
+
+// Интерфейс элемента корзины
+interface CartItem {
+  id: number;
+  title: string;
+  price: string;
+  image: string;
+  articul: string;
+  quantity: number;
+  slug: string;
+  available: boolean;
+}
+
+// Класс для управления корзиной с использованием localStorage
+export class CartService {
+  private static STORAGE_KEY = 'burspb_cart';
+
+  // Получить все товары из корзины
+  static getCart(): CartItem[] {
+    const cartData = localStorage.getItem(this.STORAGE_KEY);
+    if (!cartData) return [];
+    
+    try {
+      return JSON.parse(cartData);
+    } catch (error) {
+      console.error('Ошибка при получении данных корзины:', error);
+      return [];
+    }
+  }
+
+  // Добавить товар в корзину
+  static addToCart(item: CartItem): void {
+    const cart = this.getCart();
+    const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+    
+    if (existingItemIndex !== -1) {
+      // Если товар уже в корзине, увеличиваем количество
+      cart[existingItemIndex].quantity += item.quantity;
+    } else {
+      // Если товара еще нет, добавляем его
+      cart.push(item);
+    }
+    
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
+    this.triggerCartChange();
+  }
+
+  // Обновить количество товара в корзине
+  static updateItemQuantity(id: number, quantity: number): void {
+    const cart = this.getCart();
+    const existingItemIndex = cart.findIndex(item => item.id === id);
+    
+    if (existingItemIndex !== -1) {
+      cart[existingItemIndex].quantity = Math.max(1, quantity); // Минимум 1 товар
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
+      this.triggerCartChange();
+    }
+  }
+
+  // Удалить товар из корзины
+  static removeFromCart(id: number): void {
+    let cart = this.getCart();
+    cart = cart.filter(item => item.id !== id);
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
+    this.triggerCartChange();
+  }
+
+  // Очистить корзину
+  static clearCart(): void {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
+    this.triggerCartChange();
+  }
+
+  // Получить общее количество товаров в корзине
+  static getCartItemsCount(): number {
+    const cart = this.getCart();
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  }
+
+  // Получить общую стоимость корзины
+  static getCartTotal(): number {
+    const cart = this.getCart();
+    return cart.reduce((total, item) => {
+      const price = parseFloat(item.price.replace(/\s+/g, '').replace('₽', ''));
+      return total + (price * item.quantity);
+    }, 0);
+  }
+
+  // Проверить, есть ли товар в корзине
+  static isInCart(id: number): boolean {
+    const cart = this.getCart();
+    return cart.some(item => item.id === id);
+  }
+
+  // Получить количество конкретного товара в корзине
+  static getItemQuantity(id: number): number {
+    const cart = this.getCart();
+    const item = cart.find(item => item.id === id);
+    return item ? item.quantity : 0;
+  }
+
+  // Триггер события изменения корзины
+  static triggerCartChange(): void {
+    window.dispatchEvent(new CustomEvent('cart-changed'));
+  }
+}

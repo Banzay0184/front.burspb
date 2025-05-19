@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 
 interface Props {
   title?: string
@@ -26,9 +26,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits(['sort-change', 'price-filter-change']);
 
 // Состояния фильтров
-const minPrice = ref<string>('');
-const maxPrice = ref<string>('');
-const selectedSort = ref<string>('popularity-desc');
+const minPriceInput = ref('');
+const maxPriceInput = ref('');
+const selectedSort = ref('price-asc');
 
 // Обработчики изменений
 const handleSortChange = (event: Event) => {
@@ -37,11 +37,57 @@ const handleSortChange = (event: Event) => {
   emit('sort-change', selectedSort.value);
 };
 
-const handlePriceChange = () => {
-  const min = minPrice.value ? minPrice.value : null;
-  const max = maxPrice.value ? maxPrice.value : null;
-  emit('price-filter-change', min, max);
+// Обработчик применения фильтра цены
+const applyPriceFilter = () => {
+  let min = null;
+  let max = null;
+  
+  // Преобразуем значения в числа, если они не пустые
+  if (minPriceInput.value !== '') {
+    min = parseInt(minPriceInput.value);
+    if (isNaN(min)) min = null;
+  }
+  
+  if (maxPriceInput.value !== '') {
+    max = parseInt(maxPriceInput.value);
+    if (isNaN(max)) max = null;
+  }
+  
+  // Если оба значения указаны и минимальное больше максимального, меняем их местами
+  if (min !== null && max !== null && min > max) {
+    const temp = min;
+    min = max;
+    max = temp;
+    
+    // Обновляем поля ввода
+    minPriceInput.value = min.toString();
+    maxPriceInput.value = max.toString();
+  }
+  
+  // Отправляем событие фильтрации
+  emit('price-filter-change', 
+       min !== null ? min.toString() : null, 
+       max !== null ? max.toString() : null);
 };
+
+// Обработчик потери фокуса полями ввода
+const handleBlur = () => {
+  applyPriceFilter();
+};
+
+// Обработчик нажатия Enter в полях ввода
+const handleKeyPress = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    applyPriceFilter();
+  }
+};
+
+// Инициализация начальных значений
+onMounted(() => {
+  // Устанавливаем изначальную сортировку
+  emit('sort-change', selectedSort.value);
+});
 </script>
 
 <template>
@@ -60,8 +106,10 @@ const handlePriceChange = () => {
                 id="price-min"
                 type="number" 
                 class="input-number" 
-                v-model="minPrice"
-                @change="handlePriceChange" 
+                v-model="minPriceInput"
+                @keypress="handleKeyPress"
+                @blur="handleBlur"
+                min="0"
               />
             </div>
             <div>
@@ -70,8 +118,10 @@ const handlePriceChange = () => {
                 id="price-max"
                 type="number" 
                 class="input-number" 
-                v-model="maxPrice"
-                @change="handlePriceChange" 
+                v-model="maxPriceInput"
+                @keypress="handleKeyPress"
+                @blur="handleBlur"
+                min="0"
               />
             </div>
           </div>
