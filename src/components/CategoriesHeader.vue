@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
+
 interface CategoryItem {
   href: string;
   iconSrc: string;
@@ -7,111 +10,61 @@ interface CategoryItem {
   isBasket?: boolean;
 }
 
-const categories: CategoryItem[] = [
-  {
-    href: "/Catalog/CategoryBurovyeDolota",
-    iconSrc: "/image/4138f1.svg",
-    iconAlt: "Перейти к Буровые долота",
-    title: "Буровые долота"
-  },
-  {
-    href: "/catalog/category-burilnye-truby",
-    iconSrc: "/image/4138f1.svg",
-    iconAlt: "Перейти к Трубы для бурения скважин",
-    title: "Трубы для бурения скважин"
-  },
-  {
-    href: "/catalog/category-perehodniki-burovye",
-    iconSrc: "/image/4138f1.svg",
-    iconAlt: "Перейти к Переходники буровые",
-    title: "Переходники буровые"
-  },
-  {
-    href: "/catalog/category-vrashshatelnoe-burenie",
-    iconSrc: "/image/8cf2d3.svg",
-    iconAlt: "Перейти к Инструмент для вращательного бурения",
-    title: "Инструмент для вращательного бурения"
-  },
-  {
-    href: "/catalog/category-kolonkovoe-burenie",
-    iconSrc: "/image/f17657.svg",
-    iconAlt: "Перейти к Инструмент для колонкового бурения",
-    title: "Инструмент для колонкового бурения"
-  },
-  {
-    href: "/catalog/category-pnevmoudarnoe-burenie",
-    iconSrc: "/image/c0fc52.svg",
-    iconAlt: "Перейти к Инструмент для пневмоударного бурения",
-    title: "Инструмент для пневмоударного бурения"
-  },
-  {
-    href: "/catalog/category-sharoshechnoe-burenie",
-    iconSrc: "/image/0cbb3c.svg",
-    iconAlt: "Перейти к Инструмент для шарошечного бурения",
-    title: "Инструмент для шарошечного бурения"
-  },
-  {
-    href: "/catalog/category-shnekovoe-burenie",
-    iconSrc: "/image/b4113b.svg",
-    iconAlt: "Перейти к Интрумент для шнекового бурения",
-    title: "Интрумент для шнекового бурения"
-  },
-  {
-    href: "/catalog/category-dlya-bureniya-skvazhin-na-vodu",
-    iconSrc: "/image/4138f1.svg",
-    iconAlt: "Перейти к Инструмент для бурения скважин на воду",
-    title: "Инструмент для бурения скважин на воду"
-  },
-  {
-    href: "/catalog/category-vspomogatelnyj-instrument",
-    iconSrc: "/image/f7e482.svg",
-    iconAlt: "Перейти к Вспомогательный инструмент",
-    title: "Вспомогательный инструмент"
-  },
-  {
-    href: "/catalog/category-avarijnyj-instrument",
-    iconSrc: "/image/c2e082.svg",
-    iconAlt: "Перейти к Аварийный инструмент",
-    title: "Аварийный инструмент"
-  },
-  {
-    href: "/catalog/category-obustrojstvo-skvazhin",
-    iconSrc: "/image/919b76.svg",
-    iconAlt: "Перейти к Обустройство скважин",
-    title: "Обустройство скважин"
-  },
-  {
-    href: "/catalog/category-bentonit-polimery-smazki",
-    iconSrc: "/image/4138f1.svg",
-    iconAlt: "Перейти к Бентонит, полимеры, смазки",
-    title: "Бентонит, полимеры, смазки"
-  },
-  {
-    href: "/catalog/category-burovye-nasosy",
-    iconSrc: "/image/a19cb7.svg",
-    iconAlt: "Перейти к Буровые насосы",
-    title: "Буровые насосы"
-  },
-  {
-    href: "/catalog/category-zapasnye-chasti",
-    iconSrc: "/image/8197a9.svg",
-    iconAlt: "Перейти к Запасные части",
-    title: "Запасные части"
-  },
-  {
-    href: "/catalog/category-burovye-ustanovki",
-    iconSrc: "/image/0638dd.svg",
-    iconAlt: "Перейти к Буровые установки",
-    title: "Буровые установки"
-  },
-  {
-    href: "/Basket/BasketPage",
-    iconSrc: "/image/d1bbbc.svg",
-    iconAlt: "Перейти в корзину",
-    title: "Корзина",
-    isBasket: true
+const categories = ref<CategoryItem[]>([]);
+
+const getIconPath = (iconClass: string) => {
+  // Карта соответствия классов иконок и путей к изображениям
+  const iconMap: Record<string, string> = {
+    'icon-cat-1': '/image/0638dd.svg', // Буровые установки
+    'icon-cat-2': '/image/0cbb3c.svg', // Инструмент для шарошечного бурения
+    'icon-cat-3': '/image/8cf2d3.svg', // Инструмент для вращательного бурения
+    'icon-cat-4': '/image/b4113b.svg', // Интрумент для шнекового бурения
+    'icon-cat-5': '/image/f17657.svg', // Инструмент для колонкового бурения
+    'icon-cat-6': '/image/c0fc52.svg', // Инструмент для пневмоударного бурения
+    'icon-cat-7': '/image/919b76.svg', // Обустройство скважин
+    'icon-cat-8': '/image/c2e082.svg', // Аварийный инструмент
+    'icon-cat-9': '/image/f7e482.svg', // Вспомогательный инструмент
+    'icon-cat-11': '/image/4138f1.svg', // Буровые долота, трубы, прочее
+    'icon-cat-12': '/image/8197a9.svg', // Запасные части
+    'icon-cat-13': '/image/a19cb7.svg', // Буровые насосы
+    'icon-basket': '/image/d1bbbc.svg' // Корзина
+  };
+  
+  return iconMap[iconClass] || '/image/4138f1.svg'; // Значение по умолчанию
+};
+
+const fetchGlobalData = async () => {
+  try {
+    const response = await apiService.getGlobals();
+    if (response.data && response.data.navigation && response.data.navigation.categories) {
+      const apiCategories = response.data.navigation.categories;
+      
+      // Преобразуем данные API в формат, ожидаемый компонентом
+      categories.value = apiCategories.map((item: any) => ({
+        href: `/catalog/category-${item.slug}`,
+        iconSrc: getIconPath(item.icon),
+        iconAlt: `Перейти к ${item.title}`,
+        title: item.title,
+        isBasket: false
+      }));
+      
+      // Добавляем корзину в конец списка
+      categories.value.push({
+        href: '/Basket/BasketPage',
+        iconSrc: getIconPath('icon-basket'),
+        iconAlt: 'Перейти в корзину',
+        title: 'Корзина',
+        isBasket: true
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка при получении данных категорий:', error);
   }
-];
+};
+
+onMounted(() => {
+  fetchGlobalData();
+});
 </script>
 
 <template>

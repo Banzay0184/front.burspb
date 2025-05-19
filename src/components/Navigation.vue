@@ -1,9 +1,59 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
+
+interface NavItem {
+  nav_id: number;
+  object_id: string;
+  parent: boolean | string;
+  icon: string;
+  title: string;
+  slug: string;
+}
+
+const navItems = ref<NavItem[]>([]);
+
+const getIconPath = (iconClass: string) => {
+  const iconMap: Record<string, string> = {
+    'icon-page-1': '/image/e93b66.svg',
+    'icon-page-2': '/image/3ff0cd.svg',
+    'icon-page-3': '/image/d159ba.svg',
+    'icon-page-4': '/image/4d5a09.svg',
+    'icon-page-5': '/image/8774d1.svg',
+    'icon-page-6': '/image/ec4772.svg',
+    'icon-page-7': '/image/a16de5.svg'
+  };
+  
+  return iconMap[iconClass] || '';
+};
+
+const getRoutePath = (slug: string) => {
+  if (slug === 'garantiya') return '/Garantiya/GarantiyaPage';
+  if (slug === 'oplata') return '/Oplata/OplataPage';
+  if (slug === 'dostavka') return '/Dostavka/DostavkaPage';
+  if (slug === 'o-kompanii') return '/Okompanii/OkompaniiPage';
+  if (slug === 'kontakty') return '/Kontakty/KontaktyPage';
+  return `/${slug}`;
+};
+
+const fetchGlobalData = async () => {
+  try {
+    const response = await apiService.getGlobals();
+    if (response.data && response.data.navigation && response.data.navigation.main) {
+      navItems.value = response.data.navigation.main;
+    }
+  } catch (error) {
+    console.error('Ошибка при получении данных навигации:', error);
+  }
+};
+
+onMounted(() => {
+  fetchGlobalData();
+});
 </script>
 
 <template>
   <nav class="navigation navigation--header">
-
     <ul itemtype="http://schema.org/SiteNavigationElement">
       <li class="navigation__item">
         <RouterLink to="/Catalog/CatalogPage" itemprop="url">
@@ -21,48 +71,25 @@
           <span class="navigation__item__title">Статьи</span>
         </RouterLink>
       </li>
-      <li class="navigation__item">
-        <RouterLink to="/Garantiya/GarantiyaPage" itemprop="url">
-          <span class="navigation__item__icon navigation__item__icon--icon-page-4">
-            <img src="/image/4d5a09.svg" width="28" height="28" alt="Перейти к Гарантия" loading="lazy" />
+      <li 
+        v-for="item in navItems" 
+        :key="item.nav_id"
+        class="navigation__item"
+      >
+        <RouterLink :to="getRoutePath(item.slug)" itemprop="url">
+          <span :class="`navigation__item__icon navigation__item__icon--${item.icon}`">
+            <img 
+              :src="getIconPath(item.icon)" 
+              width="28" 
+              height="28" 
+              :alt="`Перейти к ${item.title}`" 
+              loading="lazy" 
+            />
           </span>
-          <span class="navigation__item__title">Гарантия</span>
-        </RouterLink>
-      </li>
-      <li class="navigation__item">
-        <RouterLink to="/Oplata/OplataPage" itemprop="url">
-          <span class="navigation__item__icon navigation__item__icon--icon-page-3">
-            <img src="/image/d159ba.svg" width="28" height="28" alt="Перейти к Оплата" loading="lazy" />
-          </span> 
-          <span class="navigation__item__title">Оплата</span>
-        </RouterLink>
-      </li>
-      <li class="navigation__item">
-        <RouterLink to="/Dostavka/DostavkaPage" itemprop="url">
-          <span class="navigation__item__icon navigation__item__icon--icon-page-2">
-            <img src="/image/3ff0cd.svg" width="28" height="28" alt="Перейти к Доставка" loading="lazy" />
-          </span>
-          <span class="navigation__item__title">Доставка</span>
-        </RouterLink>
-      </li>
-      <li class="navigation__item">
-        <RouterLink to="/Okompanii/OkompaniiPage" itemprop="url">
-          <span class="navigation__item__icon navigation__item__icon--icon-page-5">
-            <img src="/image/8774d1.svg" width="28" height="28" alt="Перейти к О компании" loading="lazy" />
-          </span>
-          <span class="navigation__item__title">О компании</span>
-        </RouterLink>
-      </li>
-      <li class="navigation__item">
-        <RouterLink to="/Kontakty/KontaktyPage" itemprop="url" class="nuxt-link-exact-active nuxt-link-active" aria-current="page">
-          <span class="navigation__item__icon navigation__item__icon--icon-page-6">
-            <img src="/image/ec4772.svg" width="28" height="28" alt="Перейти к Контакты" loading="lazy" />
-          </span>
-          <span class="navigation__item__title">Контакты</span>
+          <span class="navigation__item__title">{{ item.title }}</span>
         </RouterLink>
       </li>
     </ul>
-    
   </nav>
 </template>
 

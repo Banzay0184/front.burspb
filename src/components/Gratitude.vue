@@ -1,30 +1,70 @@
 <script setup lang="ts">
-const gratitudeItems = [
-  {
-    icon: "/image/918c14.svg",
-    title: "Крепкое сотрудничество",
-    description: "Мы ценим сотрудничество с каждым клиентом нашей компании делаем всё, чтобы это сотрудничество было комфортным"
-  },
-  {
-    icon: "/image/6ca9af.svg",
-    title: "Комфортный сервис",
-    description: "Полная консультация, быстрая доставка, широкий выбор товарной линейки и всесторонняя помощь наших специалистов - это получает каждый наш партнер."
-  },
-  {
-    icon: "/image/bce4b0.svg",
-    title: "Комплексный подход",
-    description: "Наша команда оказывает всестороннюю поддержку при подборе, поставке, доставке, обслуживанию оборудования и даже обучению сотрудников наших клиентов."
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
+
+interface GratitudeItem {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const gratitudeItems = ref<GratitudeItem[]>([]);
+const mainImage = ref('');
+const mainTitle = ref('');
+const mainContent = ref('');
+const isLoading = ref(true);
+const hasError = ref(false);
+
+const fetchGratitudeData = async () => {
+  isLoading.value = true;
+  hasError.value = false;
+  
+  try {
+    const response = await apiService.blocks.getGratitude();
+    console.log('Ответ API блока Gratitude:', response);
+    
+    if (response.data) {
+      if (Array.isArray(response.data.list)) {
+        gratitudeItems.value = response.data.list.map((item: any) => ({
+          icon: item.image?.webp_full || item.image?.full || '',
+          title: item.title || '',
+          description: item.description || ''
+        }));
+      }
+      
+      mainImage.value = response.data.image?.webp_full || response.data.image?.full || '/image/44b0dc.webp';
+      mainTitle.value = response.data.title || 'Спасибо за доверие';
+      mainContent.value = response.data.content || '';
+      
+      console.log('Обработанные данные Gratitude:', {
+        items: gratitudeItems.value,
+        mainImage: mainImage.value,
+        mainTitle: mainTitle.value
+      });
+    } else {
+      console.warn('Неожиданная структура данных для Gratitude:', response.data);
+      hasError.value = true;
+    }
+  } catch (error) {
+    console.error('Ошибка при получении Gratitude блока:', error);
+    hasError.value = true;
+  } finally {
+    isLoading.value = false;
   }
-]
+};
+
+onMounted(() => {
+  fetchGratitudeData();
+});
 </script>
 
 <template>
-    <section class="section gratitude">
+    <section v-if="!isLoading && !hasError" class="section gratitude">
         <div class="row">
             <div class="col col--left gratitude__main">
                 <div class="gratitude__main__image">
                     <img 
-                        src="/image/44b0dc.webp" 
+                        :src="mainImage" 
                         width="150" 
                         height="165" 
                         alt="gratitude" 
@@ -32,8 +72,9 @@ const gratitudeItems = [
                     />
                 </div>
                 <div class="gratitude__main__content">
-                    <h3 class="gratitude__title">Спасибо за доверие</h3>
-                    <div>
+                    <h3 class="gratitude__title">{{ mainTitle }}</h3>
+                    <div v-if="mainContent" v-html="mainContent"></div>
+                    <div v-else>
                         <p>Много полезной информации связанной с буровыми установками и инструментом для бурения вы можете найти в нашем разделе "Статьи"</p>
                         <p>
                             Дорогие друзья! Спасибо за выбор нашей компании, как поставщика буровых установок и инструмента. Мы ради сотрудничеству и надеемся, что у нас получится выстроить крепкие партнерские отношения на долгие годы.
@@ -51,7 +92,7 @@ const gratitudeItems = [
                 </div>
             </div>
             <div class="col col--right gratitude__list">
-                <ul>
+                <ul v-if="gratitudeItems.length > 0">
                     <li v-for="(item, index) in gratitudeItems" :key="index">
                         <div class="gratitude__list__item">
                             <div class="gratitude__list__item__icon">

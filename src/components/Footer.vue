@@ -1,8 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
 import ModalWindow from './ModalWindow.vue';
 
 const isModalVisible = ref(false);
+const logoFooter = ref('/image/2d0daf.svg');
+const phone = ref('8 812 242 75 85');
+const phoneAlt = ref('8 812 242 75 88');
+const email = ref('info@burspb.com');
+const address = ref('Санкт-Петербург, Южное Шоссе, 37 к.4 лит. Б');
+const entity = ref('ООО Группа компаний "Буровые технологии"\nИНН 7816318009\nОГРН 1167847080565');
+const workingDays = ref('Понедельник - Пятница');
+const workingHours = ref('10:00 - 18:00');
+const socialLinks = ref([
+  {
+    title: 'Email',
+    url: 'mailto:info@burspb.com',
+    icon: 'fa fa-envelope'
+  },
+  {
+    title: 'Telegram',
+    url: 'https://t.me/bur_spb',
+    icon: 'fa fa-telegram'
+  },
+  {
+    title: 'Whatsapp',
+    url: 'https://api.whatsapp.com/send?phone=79213162621',
+    icon: 'fa fa-whatsapp'
+  }
+]);
+
+const categoriesFooter = ref<any[]>([]);
+const mainNavFooter = ref<any[]>([]);
 
 const openModal = () => {
   isModalVisible.value = true;
@@ -11,6 +40,68 @@ const openModal = () => {
 const closeModal = () => {
   isModalVisible.value = false;
 };
+
+const fetchGlobalData = async () => {
+  try {
+    const response = await apiService.getGlobals();
+    
+    if (response.data) {
+      if (response.data.logo && response.data.logo.footer) {
+        logoFooter.value = response.data.logo.footer;
+      }
+      
+      if (response.data.contact) {
+        const contact = response.data.contact;
+        phone.value = contact.phone || phone.value;
+        phoneAlt.value = contact.phone_alt || phoneAlt.value;
+        email.value = contact.email || email.value;
+        address.value = contact.address || address.value;
+        entity.value = contact.entity || entity.value;
+        workingDays.value = contact.working_days || workingDays.value;
+        workingHours.value = contact.working_hours || workingHours.value;
+      }
+      
+      if (response.data.social && Array.isArray(response.data.social)) {
+        socialLinks.value = response.data.social;
+      }
+      
+      if (response.data.navigation && response.data.navigation.categories) {
+        categoriesFooter.value = response.data.navigation.categories;
+      }
+      
+      if (response.data.navigation && response.data.navigation.main) {
+        mainNavFooter.value = response.data.navigation.main;
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при получении глобальных данных для футера:', error);
+  }
+};
+
+onMounted(() => {
+  fetchGlobalData();
+});
+
+const getCategoryPath = (category: any) => {
+  if (category.type === 'taxonomy') {
+    return `/catalog/category-${category.slug}`;
+  } else if (category.type === 'post_type') {
+    return `/catalog/${category.slug}`;
+  }
+  return `/catalog/category-${category.slug}`;
+};
+
+const getPagePath = (item: any) => {
+  const pageMap: Record<string, string> = {
+    'garantiya': '/Garantiya/GarantiyaPage',
+    'oplata': '/Oplata/OplataPage',
+    'dostavka': '/Dostavka/DostavkaPage',
+    'o-kompanii': '/Okompanii/OkompaniiPage',
+    'kontakty': '/Kontakty/KontaktyPage'
+  };
+  
+  return pageMap[item.slug] || `/${item.slug}`;
+};
 </script>
 
 <template>
@@ -18,7 +109,7 @@ const closeModal = () => {
   <footer class="footer">
     <div class="wrapper">
       <div itemtype="http://schema.org/Organization" class="invisible">
-        <div itemprop="name">ООО Группа компаний "Буровые технологии"</div>
+        <div itemprop="name">{{ entity.split('\n')[0] }}</div>
         <link itemprop="url" href="https://burspb.com/">
 
         <div itemprop="address"  itemtype="https://schema.org/PostalAddress">
@@ -26,13 +117,13 @@ const closeModal = () => {
           <span itemprop="addressCountry">Россия</span>
           <span itemprop="addressRegion">Санкт-Петербург</span>
           <span itemprop="addressLocality">Санкт-Петербург</span>
-          <span itemprop="streetAddress">Южное шоссе 37, корпус 4</span>
+          <span itemprop="streetAddress">{{ address }}</span>
         </div>
 
         <div>
-          <a itemprop="telephone" href="tel:+78009006050">8 800 900 60 50</a>
-          <a itemprop="telephone" href="tel:+78009006050">8 800 900 60 50</a>
-          <a itemprop="email" href="mailto:info@burspb.com">info@burspb.com</a>
+          <a itemprop="telephone" :href="`tel:+${phone.replace(/\s/g, '')}`">{{ phone }}</a>
+          <a itemprop="telephone" :href="`tel:+${phoneAlt.replace(/\s/g, '')}`">{{ phoneAlt }}</a>
+          <a itemprop="email" :href="`mailto:${email}`">{{ email }}</a>
         </div>
       </div>
       
@@ -40,22 +131,22 @@ const closeModal = () => {
         <div class="column column--info">
           <div class="logo">
             <RouterLink to="/"aria-current="page" class="nuxt-link-exact-active nuxt-link-active">
-              <img src="/image/2d0daf.svg" width="170" height="56" alt="Оборудование для бурения №1 в России" loading="lazy">
+              <img :src="logoFooter" width="170" height="56" alt="Оборудование для бурения №1 в России" loading="lazy">
             </RouterLink>
           </div>
           
           <div class="phones phones--footer">
-            <a href="tel:+78122427585" class="phones__item">
+            <a :href="`tel:+${phone.replace(/\s/g, '')}`" class="phones__item">
               <span class="phones__item__icon"><i class="fa fa-phone"></i></span>
               <div>
-                <span class="phones__item__number">8 812 242 75 85</span>
+                <span class="phones__item__number">{{ phone }}</span>
                 <span class="phones__item__office">Офис-склад СПБ-Юг</span>
               </div>
             </a>
-            <a href="tel:+78122427588" class="phones__item">
+            <a :href="`tel:+${phoneAlt.replace(/\s/g, '')}`" class="phones__item">
               <span class="phones__item__icon"><i class="fa fa-phone"></i></span>
               <div>
-                <span class="phones__item__number">8 812 242 75 88</span>
+                <span class="phones__item__number">{{ phoneAlt }}</span>
                 <span class="phones__item__office">Офис-склад СПБ-Север</span>
               </div>
             </a>
@@ -69,25 +160,11 @@ const closeModal = () => {
           
           <div class="social social--footer">
             <ul>
-              <li class="social__item">
-                <a href="mailto:info@burspb.com" target="_blank">
-                  <span class="social__item__icon"><i class="fa fa-envelope"></i></span>
-                  <span class="social__item__title">info@burspb.com</span>
-                  <span class="accessibility">Вы можете связаться с нами посредством Email</span>
-                </a>
-              </li>
-              <li class="social__item">
-                <a href="https://t.me/bur_spb" target="_blank">
-                  <span class="social__item__icon"><i class="fa fa-telegram"></i></span>
-                  <span class="social__item__title">Telegram</span>
-                  <span class="accessibility">Вы можете связаться с нами посредством Telegram</span>
-                </a>
-              </li>
-              <li class="social__item">
-                <a href="https://api.whatsapp.com/send?phone=79213162621" target="_blank">
-                  <span class="social__item__icon"><i class="fa fa-whatsapp"></i></span>
-                  <span class="social__item__title">Whatsapp</span>
-                  <span class="accessibility">Вы можете связаться с нами посредством Whatsapp</span>
+              <li v-for="(link, index) in socialLinks" :key="index" class="social__item">
+                <a :href="link.url" target="_blank">
+                  <span class="social__item__icon"><i :class="link.icon"></i></span>
+                  <span class="social__item__title">{{ link.title }}</span>
+                  <span class="accessibility">Вы можете связаться с нами посредством {{ link.title }}</span>
                 </a>
               </li>
             </ul>
@@ -99,8 +176,8 @@ const closeModal = () => {
               <span>Время работы:</span>
             </div>
             <div class="working-hours__content">
-              <p>Понедельник - Пятница</p>
-              <p>10:00 - 18:00</p>
+              <p>{{ workingDays }}</p>
+              <p>{{ workingHours }}</p>
             </div>
           </div>
           
@@ -110,13 +187,11 @@ const closeModal = () => {
                 <i class="fa fa-map-marker"></i>
                 <span>Адрес:</span>
               </div>
-              <div class="address__content">Санкт-Петербург, Южное Шоссе, 37 к.4 лит. Б</div>
+              <div class="address__content">{{ address }}</div>
             </div>
             
             <div class="entity">
-              ООО Группа компаний "Буровые технологии"
-              ИНН 7816318009
-              ОГРН 1167847080565
+              {{ entity }}
             </div>
             
             <div class="dev-by">
@@ -136,7 +211,7 @@ const closeModal = () => {
         
         <div class="column column--navs">
           <nav class="navigation navigation--footer">
-            <ul  itemtype="http://schema.org/SiteNavigationElement">
+            <ul itemtype="http://schema.org/SiteNavigationElement">
               <li class="navigation__item navigation__item--home">
                 <RouterLink to="/" aria-current="page" itemprop="url" class="nuxt-link-exact-active nuxt-link-active">
                     <span class="navigation__item__title">Главная</span>
@@ -147,119 +222,32 @@ const closeModal = () => {
                     <span class="navigation__item__title">Статьи</span>
                 </RouterLink>
               </li>
-              <li class="navigation__item">
-                  <RouterLink to="/Garantiya/GarantiyaPage" itemprop="url">
-                      <span class="navigation__item__title">Гарантия</span>
-                  </RouterLink>
-              </li>
-              <li class="navigation__item">
-                  <RouterLink to="/Oplata/OplataPage" itemprop="url">
-                      <span class="navigation__item__title">Оплата</span>
-                  </RouterLink>
-              </li>
-              <li class="navigation__item">
-                  <RouterLink to="/Dostavka/DostavkaPage" itemprop="url">
-                      <span class="navigation__item__title">Доставка</span>
-                  </RouterLink>
-              </li>
-              <li class="navigation__item">
-                  <RouterLink to="/Okompanii/OkompaniiPage" itemprop="url">
-                      <span class="navigation__item__title">О компании</span>
-                  </RouterLink>
-              </li>
-              <li class="navigation__item">
-                  <RouterLink to="/Kontakty/KontaktyPage" itemprop="url">
-                      <span class="navigation__item__title">Контакты</span>
-                  </RouterLink>
+              <li 
+                v-for="item in mainNavFooter" 
+                :key="item.nav_id" 
+                class="navigation__item"
+              >
+                <RouterLink :to="getPagePath(item)" itemprop="url">
+                  <span class="navigation__item__title">{{ item.title }}</span>
+                </RouterLink>
               </li>
             </ul>
           </nav>
           
           <nav class="categories categories--footer">
-            <ul  itemtype="http://schema.org/SiteNavigationElement">
+            <ul itemtype="http://schema.org/SiteNavigationElement">
               <li class="categories__item">
                   <RouterLink to="/Catalog/CatalogPage" itemprop="url">
                       <span class="categories__item__title">Каталог</span>
                   </RouterLink>
               </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-burovye-dolota" itemprop="url">
-                      <span class="categories__item__title">Буровые долота</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-burilnye-truby" itemprop="url">
-                      <span class="categories__item__title">Трубы для бурения скважин</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-perehodniki-burovye" itemprop="url">
-                      <span class="categories__item__title">Переходники буровые</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-vrashshatelnoe-burenie" itemprop="url">
-                      <span class="categories__item__title">Инструмент для вращательного бурения</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-kolonkovoe-burenie" itemprop="url">
-                      <span class="categories__item__title">Инструмент для колонкового бурения</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-pnevmoudarnoe-burenie" itemprop="url">
-                      <span class="categories__item__title">Инструмент для пневмоударного бурения</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-sharoshechnoe-burenie" itemprop="url">
-                      <span class="categories__item__title">Инструмент для шарошечного бурения</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-shnekovoe-burenie" itemprop="url">
-                      <span class="categories__item__title">Инструмент для шнекового бурения</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-dlya-bureniya-skvazhin-na-vodu" itemprop="url">
-                      <span class="categories__item__title">Инструмент для бурения скважин на воду</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-vspomogatelnyj-instrument" itemprop="url">
-                      <span class="categories__item__title">Вспомогательный инструмент</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-avarijnyj-instrument" itemprop="url">
-                      <span class="categories__item__title">Аварийный инструмент</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-obustrojstvo-skvazhin" itemprop="url">
-                      <span class="categories__item__title">Обустройство скважин</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-bentonit-polimery-smazki" itemprop="url">
-                      <span class="categories__item__title">Бентонит, полимеры, смазки</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-burovye-nasosy" itemprop="url">
-                      <span class="categories__item__title">Буровые насосы</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-zapasnye-chasti" itemprop="url">
-                      <span class="categories__item__title">Запасные части</span>
-                  </RouterLink>
-              </li>
-              <li class="categories__item">
-                  <RouterLink to="/catalog/category-burovye-ustanovki" itemprop="url">
-                      <span class="categories__item__title">Буровые установки</span>
+              <li 
+                v-for="category in categoriesFooter" 
+                :key="category.nav_id" 
+                class="categories__item"
+              >
+                  <RouterLink :to="getCategoryPath(category)" itemprop="url">
+                      <span class="categories__item__title">{{ category.title }}</span>
                   </RouterLink>
               </li>
             </ul>
@@ -274,15 +262,13 @@ const closeModal = () => {
               <i class="fa fa-map-marker"></i>
               <span>Адрес:</span>
             </div>
-            <div class="address__content">Санкт-Петербург, Южное Шоссе, 37 к.4 лит. Б</div>
+            <div class="address__content">{{ address }}</div>
           </div>
         </div>
         
         <div class="column column--right">
           <div class="entity">
-            ООО Группа компаний "Буровые технологии"
-            ИНН 7816318009
-            ОГРН 1167847080565
+            {{ entity }}
           </div>
           
           <div class="dev-by">

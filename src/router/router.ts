@@ -11,6 +11,7 @@ import KontaktyPage from '../pages/Kontakty/KontaktyPage.vue';
 import CategoryBurovyeDolota from '../pages/Catalog/CategoryBurovyeDolota.vue';
 import CatalogDetail from '../pages/Catalog/CatalogDetail.vue';
 import BasketPage from '../pages/Basket/BasketPage.vue';
+import ApiTest from '../pages/ApiTest.vue';
 
 
 const routes = [
@@ -27,6 +28,12 @@ const routes = [
   {
     path: '/Statji/StatjiPage',
     name: 'StatjiPage',
+    component: StatjiPage,
+    alias: '/statji'
+  },
+  {
+    path: '/statji/category/:category',
+    name: 'StatjiCategory',
     component: StatjiPage,
   },
   {
@@ -60,12 +67,16 @@ const routes = [
     component: BasketPage,
   },
   {
-    path: '/Statji/StatjiDetail',
-    name: 'StatjiDetail',
+    path: '/statji/:slug',
+    name: 'StatjiDetailWithSlug',
     component: StatjiDetail,
   },
+  {
+    path: '/api-test',
+    name: 'ApiTest',
+    component: ApiTest,
+  },
 
-  // FOR TEST
   {
     path: '/Catalog/CategoryBurovyeDolota',
     name: 'CategoryBurovyeDolota',

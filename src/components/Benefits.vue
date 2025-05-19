@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
+
 interface BenefitItem {
   icon: string;
   alt: string;
@@ -6,42 +9,46 @@ interface BenefitItem {
   description: string;
 }
 
-const benefits: BenefitItem[] = [
-  {
-    icon: "/image/479440.svg",
-    alt: "benefits-01",
-    title: "Отвечаем за качество",
-    description: "Вся поставляемая продукция и установки соответствуют высокому классу качества, что подтверждено сертификатами"
-  },
-  {
-    icon: "/image/9e8e12.svg",
-    alt: "benefits-02",
-    title: "Гарантируем надежость",
-    description: "Отвечаем за надежность каждого изделия гарантируя высокий класс продукции"
-  },
-  {
-    icon: "/image/453b9d.svg",
-    alt: "benefits-03",
-    title: "Комплексный подход",
-    description: "Помогаем Вам с самого знакомства, от выбора необходимого оборудования или установки, до обучения"
-  },
-  {
-    icon: "/image/2a8c7a.svg",
-    alt: "benefits-04",
-    title: "Эффективность поставки",
-    description: "Всё поставляемое оборудование идет с полным комплектом всех необходимых инструментов для работы"
-  },
-  {
-    icon: "/image/fa4e0d.svg",
-    alt: "benefits-05",
-    title: "Доступнее конкурентов",
-    description: "Держим цену на продукцию ниже рыночных за счет прямой работы с производителями, без посредников"
+const benefits = ref<BenefitItem[]>([]);
+const isLoading = ref(true);
+const hasError = ref(false);
+
+const fetchBenefits = async () => {
+  isLoading.value = true;
+  hasError.value = false;
+  
+  try {
+    const response = await apiService.blocks.getBenefits();
+    console.log('Ответ API блока Benefits:', response);
+    
+    if (response.data && Array.isArray(response.data.content)) {
+      benefits.value = response.data.content.map((item: any) => ({
+        icon: item.image?.webp_full || item.image?.full || '',
+        alt: item.image?.alt?.title || `benefits-item`,
+        title: item.title || '',
+        description: item.description || ''
+      }));
+      
+      console.log('Обработанные данные Benefits:', benefits.value);
+    } else {
+      console.warn('Неожиданная структура данных для Benefits:', response.data);
+      hasError.value = true;
+    }
+  } catch (error) {
+    console.error('Ошибка при получении Benefits блока:', error);
+    hasError.value = true;
+  } finally {
+    isLoading.value = false;
   }
-];
+};
+
+onMounted(() => {
+  fetchBenefits();
+});
 </script>
 
 <template>
-    <section class="section benefits">
+    <section v-if="!isLoading && !hasError && benefits.length > 0" class="section benefits">
         <ul>
         <li v-for="(benefit, index) in benefits" :key="index">
             <div class="benefits__item">

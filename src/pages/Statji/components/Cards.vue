@@ -1,147 +1,298 @@
 <script setup lang="ts">
-interface BlogPost {
+import { ref, computed } from 'vue';
+
+interface Post {
   id: number;
-  image: string;
-  alt: string;
   title: string;
-  url: string;
   date: string;
+  modified: string;
   author: string;
-  views: number;
-  readTime: string;
-  description?: string;
+  slug: string;
+  img: {
+    full: string;
+    square_350: string;
+    webp_full: string;
+    webp_square_350: string | null;
+    alt: {
+      title: string;
+      description: string;
+    }
+  };
+  category: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    parent: null | number;
+  }>;
+  meta: {
+    priority_category: string;
+    read_time: string | null;
+    views: number;
+  };
+  excerpt: string | null;
 }
 
-const posts: BlogPost[] = [
-  {
-    id: 1,
-    image: "/image/031f8a.jpeg",
-    alt: "Описание для centrobezhnyj-nasos",
-    title: "Как выбрать скважинный насос",
-    url: "/Statji/StatjiDetail",
-    date: "2023-02-24",
-    author: "Василий К.",
-    views: 64,
-    readTime: "10",
-  },
-  {
-    id: 2,
-    image: "/image/782840.webp",
-    alt: "Описание для 99vkzk4wws1pgih7e7sx5jnqbfofyuqy",
-    title: "Как подобрать и установить скважинный оголовок",
-    url: "/statji/kak-podobrat-i-ustanovit-skvazhinnyj-ogolovok",
-    date: "2023-02-24",
-    author: "Василий К.",
-    views: 71,
-    readTime: "10",
-  },
-  {
-    id: 3,
-    image: "/image/dbd406.webp",
-    alt: "Описание для 1",
-    title: "МГБУ на воду",
-    url: "/statji/mgbu-na-vodu",
-    date: "2023-02-15",
-    author: "Евгений Д.",
-    views: 82,
-    readTime: "1 мин",
-  },
-  {
-    id: 4,
-    image: "/image/0c69d5.webp",
-    alt: "Описание для 002",
-    title: "Буровое оборудование на воду",
-    url: "/statji/burovoe-oborudovanie-na-vodu",
-    date: "2023-02-14",
-    author: "Евгений Д.",
-    views: 77,
-    readTime: "1 мин",
-  },
-  {
-    id: 5,
-    image: "/image/b9499e.webp",
-    alt: "Описание для 98",
-    title: "Долото PDC",
-    url: "/statji/doloto-pdc",
-    date: "2023-02-14",
-    author: "Евгений Д.",
-    views: 78,
-    readTime: "1 мин",
-  },
-  {
-    id: 6,
-    image: "/image/67821b.jpg",
-    alt: "Описание для SONY DSC",
-    title: "Шнек на буровую установку",
-    url: "/statji/shnek-na-burovuyu-ustanovku",
-    date: "2023-02-14",
-    author: "Евгений Д.",
-    views: 76,
-    readTime: "1 мин",
-  },
-];
+const props = defineProps<{
+  posts: Post[];
+}>();
+
+const getImageUrl = (post: Post) => {
+  return post.img.webp_square_350 || post.img.webp_full || post.img.full;
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU');
+};
+
+const getPostUrl = (post: Post) => {
+  return `/statji/${post.slug}`;
+};
+
+const getCategoryUrl = (category: { slug: string }) => {
+  return `/statji/category/${category.slug}`;
+};
+
+// Получаем сокращенное имя автора (Имя + первая буква фамилии)
+const formatAuthor = (author: string) => {
+  if (!author) return '';
+  
+  const parts = author.split(' ');
+  if (parts.length < 2) return author;
+  
+  const firstName = parts[0];
+  const lastName = parts[1];
+  
+  return `${firstName} ${lastName.charAt(0)}.`;
+};
 </script>
 
 <template>
-  <ul itemscope itemtype="http://schema.org/Blog" class="cards">
-    <li v-for="post in posts" :key="post.id" class="cards__item">
-      <div
-        itemprop="blogPosts"
-        itemscope
-        itemtype="http://schema.org/BlogPosting"
-        class="card card--post"
-      >
-        <div class="card__background">
-          <img
-            :src="post.image"
-            width="350"
-            height="350"
-            :alt="post.alt"
-            loading="lazy"
-            itemprop="image"
-          />
-        </div>
-        <div class="card__inner">
-          <a :href="post.url" class="">
-            <h2 itemprop="headline" class="card__title">{{ post.title }}</h2>
+  <div v-if="posts && posts.length > 0" class="cards">
+    <div class="card" v-for="post in posts" :key="post.id">
+      <div class="card__image">
+        <a :href="getPostUrl(post)" :title="post.title">
+          <img loading="lazy" :src="getImageUrl(post)" :alt="post.img.alt.title">
+        </a>
+      </div>
+      <div class="card__content">
+        <div v-if="post.category && post.category.length > 0" class="card__content__categories">
+          <a 
+            v-for="category in post.category" 
+            :key="category.id" 
+            :href="getCategoryUrl(category)" 
+            class="card__content__category-link"
+          >
+            {{ category.title }}
           </a>
-          <div class="card__excerpt">
-            <p itemprop="description">{{ post.description }}</p>
-          </div>
-          <div class="card__meta">
-            <div class="card__meta__row card__meta__row--post">
-              <div class="card__meta__inline">
-                <span class="card__meta__inline__icon card__meta__inline__icon--date"></span>
-                <time
-                  itemprop="datePublished"
-                  :datetime="post.date"
-                  class="card__meta__inline__title"
-                  >{{ new Date(post.date).toLocaleDateString() }}</time
-                >
-              </div>
-              <div class="card__meta__inline card__meta__inline--author">
-                <span class="card__meta__inline__icon card__meta__inline__icon--author"></span>
-                <span itemprop="author" class="card__meta__inline__title">{{ post.author }}</span>
-              </div>
-              <div class="card__meta__inline">
-                <span class="card__meta__inline__icon card__meta__inline__icon--views"></span>
-                <span class="card__meta__inline__title">{{ post.views }}</span>
-              </div>
-              <div class="card__meta__inline">
-                <span class="card__meta__inline__icon card__meta__inline__icon--read-time"></span>
-                <span class="card__meta__inline__title">{{ post.readTime }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="card__actions">
-            <div>
-              <span class="button-wrapper">
-                <a :href="post.url" class="button button--blue button--black">Подробнее</a>
-              </span>
-            </div>
-          </div>
+        </div>
+        <a :href="getPostUrl(post)" :title="post.title">
+          <h3 class="card__content__title">{{ post.title }}</h3>
+        </a>
+        <div class="card__content__meta">
+          <span class="card__content__meta__item card__content__meta__item--date">{{ formatDate(post.date) }}</span>
+          <span class="card__content__meta__item card__content__meta__item--views">{{ post.meta.views }}</span>
+          <span v-if="post.meta.read_time" class="card__content__meta__item card__content__meta__item--read-time">{{ post.meta.read_time }}</span>
+          <span class="card__content__meta__item card__content__meta__item--author">{{ post.author }}</span>
+        </div>
+        <div v-if="post.excerpt" class="card__content__excerpt">
+          <p>{{ post.excerpt }}</p>
+        </div>
+        <div class="card__content__button">
+          <span class="button-wrapper">
+            <a :href="getPostUrl(post)" class="button button--blue button--black">Подробнее</a>
+          </span>
         </div>
       </div>
-    </li>
-  </ul>
+    </div>
+  </div>
+  <p v-else class="no-posts">
+    Статьи отсутствуют или загружаются...
+  </p>
 </template>
+
+<style lang="scss" scoped>
+.no-posts {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -1.5rem;
+}
+
+.card {
+  width: 100%;
+  margin: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+
+  @media (min-width: 576px) {
+    width: calc(50% - 3rem);
+  }
+
+  @media (min-width: 992px) {
+    width: calc(33.333% - 3rem);
+  }
+
+  @media (min-width: 1200px) {
+    width: calc(25% - 3rem);
+  }
+
+  &:hover {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  }
+
+  &__image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  &__content {
+    padding: 1rem;
+    
+    &__categories {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 0.7rem;
+    }
+    
+    &__category-link {
+      font-size: 0.75rem;
+      background-color: #f0f0f0;
+      border-radius: 3px;
+      padding: 0.2rem 0.5rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      color: #555;
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: #e0e0e0;
+      }
+    }
+
+    &__title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+      height: 3.36rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    &__meta {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #666;
+
+      &__item {
+        margin-right: 1rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+
+        &--date::before {
+          content: "\f073";
+          font-family: "FontAwesome";
+          margin-right: 0.3rem;
+        }
+
+        &--views::before {
+          content: "\f06e";
+          font-family: "FontAwesome";
+          margin-right: 0.3rem;
+        }
+
+        &--read-time::before {
+          content: "\f017";
+          font-family: "FontAwesome";
+          margin-right: 0.3rem;
+        }
+
+        &--author::before {
+          content: "\f007";
+          font-family: "FontAwesome";
+          margin-right: 0.3rem;
+        }
+      }
+    }
+
+    &__excerpt {
+      height: 4.5rem;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #333;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    &__button {
+      .button-wrapper {
+        display: block;
+        text-align: center;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: #007bff;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+
+        &:hover {
+          background-color: #0056b3;
+        }
+
+        &--blue {
+          background-color: #007bff;
+
+          &:hover {
+            background-color: #0056b3;
+          }
+        }
+
+        &--black {
+          background-color: #333;
+
+          &:hover {
+            background-color: #555;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,203 +1,258 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
+import apiService from '../../api/api';
+
+interface Post {
+  id: number;
+  title: string;
+  date: string;
+  modified: string;
+  author: string;
+  img: {
+    full: string;
+    square_350: string;
+    webp_full: string | null;
+    webp_square_350: string | null;
+    alt: {
+      title: string;
+      description: string;
+    }
+  };
+  content: string;
+  category: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    parent: null | number;
+  }>;
+  meta: {
+    priority_category: string;
+    read_time: string | null;
+    views: number;
+  };
+  blocks: {
+    gratitude: any;
+    comments: boolean;
+  };
+  breadcrumbs: Array<{
+    title: string;
+    slug: string;
+  }>;
+  similar: Array<any>;
+}
+
+const route = useRoute();
+const post = ref<Post | null>(null);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const similarPosts = ref<any[]>([]);
+
+const getPostSlug = () => {
+  // Получаем slug из параметров маршрута
+  return route.params.slug || 'kak-vybrat-skvazhinnyj-nasos';
+};
+
+const fetchPostData = async () => {
+  try {
+    isLoading.value = true;
+    const slug = getPostSlug();
+    const response = await apiService.posts.getBySlug(slug as string);
+    
+    if (response.data) {
+      // Приводим полученные данные к типу Post
+      const apiData = response.data as unknown as Post;
+      post.value = apiData;
+      
+      // Получаем похожие статьи, если они есть
+      if (apiData.similar && Array.isArray(apiData.similar)) {
+        similarPosts.value = apiData.similar.slice(0, 4); // Берем только первые 4 похожие статьи
+      }
+    } else {
+      error.value = 'Не удалось загрузить статью. Пожалуйста, попробуйте позже.';
+    }
+  } catch (err) {
+    console.error('Ошибка при загрузке данных статьи:', err);
+    error.value = 'Произошла ошибка при загрузке статьи. Пожалуйста, попробуйте позже.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU');
+};
+
+const getImageUrl = (post: Post) => {
+  return post.img.webp_full || post.img.full;
+};
+
+const getCategoryUrl = (category: { slug: string }) => {
+  return `/statji/category/${category.slug}`;
+};
+
+onMounted(() => {
+  fetchPostData();
+});
 </script>
 
 <template>
   <div class="main">
     <div class="wrapper">
+      <div v-if="isLoading" class="loading-container">
+        <p>Загрузка статьи...</p>
+      </div>
+      
+      <div v-else-if="error" class="error-container">
+        <p>{{ error }}</p>
+      </div>
+      
+      <template v-else-if="post">
+        <Breadcrumbs />
 
-      <Breadcrumbs />
-
-      <article itemscope itemtype="http://schema.org/Article" class="post">
-        <header>
-          <h1 itemprop="headline" class="title post__title">Как выбрать скважинный насос</h1>
-          <div class="thumbnail post__thumbnail"><img itemprop="image"
-              src="https://burspb.com/api/files/centrobezhnyj-nasos.jpeg.webp"></div>
-          <div class="post__meta">
-            <div class="post__meta__item"><span class="post__meta__icon post__meta__icon--date"></span> <time
-                itemprop="datePublished" datetime="2023-02-24" class="post__meta__title">24.02.2023</time></div>
-            <div class="post__meta__item"><span class="post__meta__icon post__meta__icon--views"></span> <span
-                class="post__meta__title">66</span></div>
-            <div class="post__meta__item"><span class="post__meta__icon post__meta__icon--read-time"></span> <span
-                class="post__meta__title">10</span></div>
-            <div class="post__meta__item"><span class="post__meta__icon post__meta__icon--author"></span> <span
-                itemprop="author" class="post__meta__title">Василий Колесник</span></div>
+        <article itemscope itemtype="http://schema.org/Article" class="post">
+          <header>
+            <h1 itemprop="headline" class="title post__title">{{ post.title }}</h1>
+            
+            <div v-if="post.category && post.category.length > 0" class="post__categories">
+              <a 
+                v-for="category in post.category" 
+                :key="category.id" 
+                :href="getCategoryUrl(category)" 
+                class="post__category-link"
+              >
+                {{ category.title }}
+              </a>
+            </div>
+            
+            <div class="thumbnail post__thumbnail">
+              <img itemprop="image" :src="getImageUrl(post)" :alt="post.img.alt.description">
+            </div>
+            <div class="post__meta">
+              <div class="post__meta__item">
+                <span class="post__meta__icon post__meta__icon--date"></span>
+                <time itemprop="datePublished" :datetime="post.date" class="post__meta__title">{{ formatDate(post.date) }}</time>
+              </div>
+              <div class="post__meta__item">
+                <span class="post__meta__icon post__meta__icon--views"></span>
+                <span class="post__meta__title">{{ post.meta.views }}</span>
+              </div>
+              <div v-if="post.meta.read_time" class="post__meta__item">
+                <span class="post__meta__icon post__meta__icon--read-time"></span>
+                <span class="post__meta__title">{{ post.meta.read_time }}</span>
+              </div>
+              <div class="post__meta__item">
+                <span class="post__meta__icon post__meta__icon--author"></span>
+                <span itemprop="author" class="post__meta__title">{{ post.author }}</span>
+              </div>
+            </div>
+          </header>
+          <section itemprop="articleBody" class="content post__content" v-html="post.content">
+          </section>
+          <meta itemscope itemprop="mainEntityOfPage" itemtype="https://schema.org/WebPage" 
+                :itemid="`https://burspb.com/statji/${getPostSlug()}`">
+        </article>
+        
+        <!-- Похожие статьи -->
+        <div v-if="similarPosts.length > 0" class="similar-posts">
+          <h2 class="similar-posts__title">Похожие статьи</h2>
+          <div class="similar-posts__grid">
+            <div v-for="(similarPost, index) in similarPosts" :key="index" class="similar-posts__item">
+              <a :href="`/statji/${similarPost.post_name}`" class="similar-posts__link">
+                <h3 class="similar-posts__item-title">{{ similarPost.post_title }}</h3>
+              </a>
+            </div>
           </div>
-        </header>
-        <section itemprop="articleBody" class="content post__content">
-          <ul>
-            <li><a href="#blok-1">Что такое скважинный насос</a></li>
-            <li><a href="#blok-2">Какие бывают виды скважинных насосов</a></li>
-            <li><a href="#blok-3">Центробежные насосы для скважин</a></li>
-            <li><a href="#blok-4">Погружные насосы для скважин</a></li>
-            <li><a href="#blok-5">Глубинные насосы для скважин</a></li>
-            <li><a href="#blok-6">Винтовые насосы для скважин</a></li>
-            <li><a href="#blok-7">Как выбрать скважинный насос</a></li>
-          </ul>
-
-          <div id="blok-1">
-            <h2>Что такое скважинный насос</h2>
-            <p>Скважинный насос - это тип насоса, который используется для откачки воды из скважин. Он является ключевым
-              компонентом системы водоснабжения на многих объектах, таких как частные дома, дачи, фермы, заводы и
-              промышленные предприятия.</p>
-            <p>Скважинный водяной насос может быть установлен как на поверхности, так и под водой, в зависимости от
-              глубины скважины. Обычно он состоит из нескольких компонентов, таких как корпус, насосное колесо,
-              двигатель и соединительные трубы.</p>
-            <p>Для выбора правильного скважинного водяного насоса необходимо учитывать такие параметры, как глубина
-              скважины, производительность насоса, требуемое давление и тип воды (сладкая или соленая). Кроме того,
-              также нужно учитывать местные условия, такие как климат, качество воды и т.д.</p>
-            <p>Скважинный водяной насос является важной частью системы водоснабжения и его правильный выбор и установка
-              могут значительно повысить эффективность и надежность работы системы.</p>
-          </div>
-          <div id="blok-2">
-            <h2>Какие бывают виды насосов для скважин?</h2>
-
-            <p>Существует несколько видов скважинных насосов, которые отличаются по конструкции и применению. Насосы для
-              скважин отличаются от других насосов тем, что они предназначены для подъема воды из скважин. В отличие от
-              поверхностных насосов, которые могут использоваться для перекачки воды из рек, озер или других источников
-              воды, скважинные насосы устанавливаются непосредственно внутри скважины и используются для подъема воды из
-              глубины.</p>
-
-            <p>Кроме того, скважинные насосы могут различаться по конструкции и мощности, в зависимости от требуемой
-              глубины скважины и объема воды, который необходимо перекачивать. Некоторые скважинные насосы имеют
-              многоступенчатую конструкцию, которая позволяет обеспечить более высокое давление и производительность.
-              Другие насосы могут быть специально разработаны для использования с определенными типами скважин или для
-              работы в определенных условиях, таких как высокая соленость или содержание песка в воде.</p>
-          </div>
-          <div id="blok-3">
-            <h3>Центробежные насосы для скважин</h3>
-
-            <p>Центробежные насосы - это тип скважинных насосов, который использует принцип центробежной силы для
-              перекачки воды из скважины. Они могут использоваться для подъема воды из глубоких скважин и обеспечивают
-              высокую производительность.</p>
-
-            <p>Такие насосы имеют многоступенчатую конструкцию, которая позволяет обеспечить более высокое давление и
-              производительность. Каждый ступенчатый насос состоит из вала, на котором закреплены роторы и статоры. При
-              работе насоса роторы вращаются, создавая центробежную силу, которая перекачивает воду из скважины в
-              трубопровод.</p>
-
-            <p>Одним из главных преимуществ центробежных насосов для скважин является их высокая производительность и
-              давление, что позволяет использовать их для перекачки воды на большие расстояния и на большие высоты.
-              Кроме того, они имеют длительный срок службы и могут быть использованы для перекачки воды из скважин
-              различной глубины.</p>
-
-            <p>Если вы хотите <a href="https://burspb.com/catalog/selection-centrobezhnye-nasosy-dlya-skvazhin">купить
-                центробежный насос для скважины</a>, вы можете обратиться к нашим специалистам. При выборе насоса
-              необходимо учитывать глубину скважины, диаметр трубопровода, необходимую производительность и давление, а
-              также тип используемого электродвигателя.</p>
-          </div>
-          <div id="blok-4">
-            <h3>Погружные насосы для скважин</h3>
-            <p><a href="https://burspb.com/catalog/selection-pogruzhnye-nasosy-dlya-skvazhin">Погружные насосы для
-                скважин</a> - это насосное оборудование, которое устанавливается непосредственно внутри скважины,
-              позволяя поднимать воду на поверхность. Они состоят из корпуса, в котором находится электродвигатель,
-              насосный блок и электрический кабель, через который осуществляется подача электроэнергии.</p>
-
-            <p>Погружные насосы могут быть использованы для подъема воды из глубоких и мелких скважин. Они работают по
-              принципу преобразования механической энергии вращения ротора насоса в гидравлическую энергию, которая
-              перекачивает воду в трубопровод и поднимает ее на поверхность.</p>
-            <p>Одним из преимуществ таких насосов является их высокая эффективность и надежность, а также возможность
-              работы в различных условиях. Они могут использоваться для подъема воды из скважин различной глубины и
-              диаметра. Кроме того, они не занимают много места на поверхности земли, что делает их удобными для
-              установки на территориях с ограниченным пространством.</p>
-
-            <p>Если вы планируете <a href="https://burspb.com/catalog/selection-pogruzhnye-nasosy-dlya-skvazhin">купить
-                погружной насос для скважины</a>, то вам необходимо определиться с глубиной и диаметром скважины, а
-              также с необходимой производительностью и давлением насоса. Вы можете обратиться к нам в компанию, чтобы
-              получить профессиональную консультацию и выбрать насос, который подойдет для ваших потребностей.</p>
-          </div>
-          <div id="blok-5">
-            <h3>Глубинные насосы для скважин</h3>
-
-            <p><a href="https://burspb.com/catalog/selection-glubinnye-nasosy-dlya-skvazhin">Глубинные насосы для
-                скважин</a> - это специальные насосные устройства, предназначенные для подъема воды из глубоких скважин.
-              Они могут использоваться как в домашних хозяйствах, так и в промышленных целях, например, для орошения
-              полей, обеспечения нужд производств и т.д.</p>
-
-            <p>Эти насосы работают по принципу преобразования механической энергии вращения ротора насоса в
-              гидравлическую энергию, которая перекачивает воду в трубопровод и поднимает ее на поверхность. Они имеют
-              достаточно высокую производительность и давление, что позволяет использовать их для подъема воды на
-              большие расстояния и высоты.</p>
-            <p>Если вы планируете купить глубинный насос, то необходимо учитывать такие параметры, как диаметр скважины,
-              глубина скважины, производительность насоса, его давление и эффективность. Вы можете обратиться к
-              специализированным компаниям, которые занимаются продажей и установкой глубинных насосов для скважин,
-              чтобы получить профессиональную консультацию и выбрать насос, который будет оптимально соответствовать
-              вашим потребностям.</p>
-
-            <p><a href="https://burspb.com/catalog/selection-glubinnye-nasosy-dlya-skvazhin">Купить глубинный насос для
-                скважины</a> можно у нас в интернет-магазине, либо в офисе продаж. При выборе насоса обязательно
-              уточняйте гарантийные условия, технические характеристики и возможности по доставке и установке насоса.
-            </p>
-          </div>
-          <div id="blok-6">
-            <h3>Винтовые насосы для скважин</h3>
-            <p>Винтовые насосы для скважин отличаются от других типов насосов своей конструкцией - они имеют винтовой
-              ротор, который вращается внутри статора, создавая подъемную силу для перекачивания воды. Такой механизм
-              обеспечивает более плавный и тихий ход насоса, а также повышенную эффективность при работе с жидкостями с
-              высокой вязкостью.</p>
-
-            <p>В нашем интернет-магазине вы можете <a
-                href="https://burspb.com/catalog/selection-vintovye-nasosy-dlya-skvazhin">купить винтовой насос для
-                скважины</a> различной производительности и давления, а также с различными диаметрами для разных
-              размеров скважин. Наши насосы изготавливаются из качественных материалов и имеют высокую надежность и
-              долговечность, что позволяет использовать их для длительного времени без проблем.</p>
-
-            <p>Мы предлагаем только сертифицированное оборудование от проверенных производителей, так что вы можете быть
-              уверены в качестве наших товаров. Приобретая скважинный насос в нашем интернет-магазине, вы получаете
-              возможность быстрой и удобной доставки в любой регион России, а также гарантию на всю продукцию.</p>
-
-            <p>Если у вас есть вопросы по выбору и приобретению винтового насоса для скважины, наши специалисты всегда
-              готовы помочь и дать профессиональную консультацию. Сделайте свой заказ сейчас и получите качественный
-              винтовой насос для ваших нужд.</p>
-          </div>
-          <div id="blok-7">
-            <h2>Как выбрать скважинный насос</h2>
-            <p>Выбор скважинного насоса зависит от многих факторов, таких как глубина скважины, потребность в воде,
-              количество потребителей и другие технические характеристики. Вот несколько важных факторов, которые нужно
-              учитывать при выборе скважинного насоса:</p>
-            <ul>
-              <li>Глубина скважины: определите глубину скважины, чтобы выбрать насос с нужной длиной шнура и глубиной
-                погружения.</li>
-              <li>Дебит и напор: определите необходимый дебит и напор, чтобы выбрать насос с нужной производительностью
-                и мощностью.</li>
-              <li>Качество воды: учтите качество воды, чтобы выбрать насос, который может работать с данной водой без
-                повреждения.</li>
-              <li>Тип насоса: выберите тип насоса, соответствующий условиям эксплуатации (например, глубина погружения,
-                тип насоса для чистой или загрязненной воды).</li>
-              <li>Надежность и качество: выбирайте насосы проверенных производителей с хорошей репутацией, чтобы
-                получить надежное оборудование высокого качества.</li>
-              <li>Стоимость: учитывайте свой бюджет при выборе насоса, но не экономьте на качестве и надежности
-                оборудования, чтобы избежать дополнительных расходов на ремонт и замену в будущем.</li>
-              <li>Удобство использования: выбирайте насос, который удобен в эксплуатации и обслуживании, имеет простую
-                конструкцию и легко устанавливается и демонтируется.</li>
-              <li>Гарантия и сервис: убедитесь, что насос имеет гарантию и доступ к сервисному обслуживанию, чтобы в
-                случае необходимости можно было быстро получить квалифицированную помощь и замену комплектующих.</li>
-              <li>Энергоэффективность: выбирайте насос, который потребляет меньше энергии, чтобы снизить расходы на
-                электроэнергию.</li>
-              <li>Совместимость с другими оборудованиями: учитывайте совместимость насоса с другими компонентами
-                системы, такими как трубы, клапаны, фильтры и т.д.</li>
-            </ul>
-
-            <p>При выборе скважинного насоса необходимо учитывать все эти факторы и подобрать насос, который наилучшим
-              образом соответствует вашим потребностям и условиям эксплуатации.</p>
-            <p>В каталоге компании Буровые технологии вы найдете большой ассортимент качественных <a
-                href="https://burspb.com/catalog/category-skvazhinnye-nasosy">скважинных насосов</a> различных типов и
-              производительности.</p>
-            <p>Если вы не можете определиться с выбором насоса для скважины своей глубины, то прочитайте нашу статью
-              "Как выбрать насос для скважин различной глубины".</p>
-          </div>
-        </section>
-        <meta itemscope itemprop="mainEntityOfPage" itemtype="https://schema.org/WebPage"
-          itemid="https://burspb.com/statji/kak-vybrat-skvazhinnyj-nasos">
-      </article>
-      <Gratitude />
+        </div>
+        
+        <Gratitude />
+      </template>
     </div>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
+.loading-container,
+.error-container {
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-container {
+  color: #e53935;
+}
+
+.post {
+  &__categories {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  
+  &__category-link {
+    font-size: 0.85rem;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    padding: 0.3rem 0.7rem;
+    margin-right: 0.7rem;
+    margin-bottom: 0.7rem;
+    color: #555;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: #e0e0e0;
+    }
+  }
+}
+
+.similar-posts {
+  margin: 3rem 0;
+  
+  &__title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+    
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (min-width: 992px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+  &__item {
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+  
+  &__link {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  &__item-title {
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
 .categories-full>ul>li {
   margin-bottom: 3rem;
   position: relative
@@ -257,7 +312,7 @@ import Gratitude from '../../components/Gratitude.vue';
 
   .categories-full__parent__mobile-action:before {
     line-height: 1;
-    content: "";
+    content: "";
     font-family: FontAwesome;
     font-size: 1rem;
     display: inline-block;

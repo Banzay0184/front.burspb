@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
+import apiService from '../api/api';
 
 interface PopularItem {
   id: number;
@@ -9,49 +11,44 @@ interface PopularItem {
   link: string;
 }
 
-const popularItems: PopularItem[] = [
-  {
-    id: 1,
-    title: "Оборудование и инструмент для бурения скважин",
-    description: "Самый нужный инструмент используемый для бурения скважин. Большой ассортимент различного бурового оборудования",
-    imageUrl: "https://burspb.com/api/files/popular-01.jpg.webp",
-    link: "/catalog/category-dlya-bureniya-skvazhin-na-vodu"
-  },
-  {
-    id: 2,
-    title: "Инструмент для шнекового бурения",
-    imageUrl: "https://burspb.com/api/files/popular-02.jpg.webp",
-    link: "/catalog/category-shnekovoe-burenie"
-  },
-  {
-    id: 3,
-    title: "Вспомогательный инструмент",
-    imageUrl: "https://burspb.com/api/files/popular-03.jpg.webp",
-    link: "/catalog/category-vspomogatelnyj-instrument"
-  },
-  {
-    id: 4,
-    title: "PDC долота",
-    imageUrl: "https://burspb.com/api/files/popular-04.jpg.webp",
-    link: "/catalog/category-pdc-doloto"
-  },
-  {
-    id: 5,
-    title: "Аварийный инструмент",
-    imageUrl: "https://burspb.com/api/files/popular-05.jpg.webp",
-    link: "/catalog/category-avarijnyj-instrument"
-  },
-  {
-    id: 6,
-    title: "Обустройство скважин",
-    imageUrl: "https://burspb.com/api/files/popular-06.jpg.webp",
-    link: "/catalog/category-obustrojstvo-skvazhin"
+const popularItems = ref<PopularItem[]>([]);
+const isLoading = ref(true);
+const hasError = ref(false);
+
+const fetchPopularItems = async () => {
+  isLoading.value = true;
+  hasError.value = false;
+  
+  try {
+    const response = await apiService.blocks.getPopular();
+
+    
+    if (response.data && Array.isArray(response.data.content)) {
+      popularItems.value = response.data.content.map((item: any) => ({
+        id: item.id || 0,
+        title: item.title || '',
+        description: item.description || undefined,
+        imageUrl: item.image?.webp_full || item.image?.full || '',
+        link: '/category/' + item.url?.id || '/category/slug/' + item.url?.slug
+      }));
+      
+    } else {
+      hasError.value = true;
+    }
+  } catch (error) {
+    hasError.value = true;
+  } finally {
+    isLoading.value = false;
   }
-];
+};
+
+onMounted(() => {
+  fetchPopularItems();
+});
 </script>
 
 <template>
-  <section class="section popular">
+  <section v-if="!isLoading && !hasError && popularItems.length >= 6" class="section popular">
     <div class="section-title">
       <h3 class="section-title-tag">Популярные разделы каталога</h3>
     </div>

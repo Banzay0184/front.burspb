@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import apiService from '../api/api';
+
 interface Article {
   id: number;
   title: string;
@@ -12,56 +15,51 @@ interface Article {
   description?: string;
 }
 
-const articles: Article[] = [
-  {
-    id: 1,
-    title: "Как выбрать скважинный насос",
-    url: "/statji/kak-vybrat-skvazhinnyj-nasos",
-    image: "/image/031f8a.jpeg",
-    imageAlt: "Описание для centrobezhnyj-nasos",
-    date: "2023-02-24",
-    author: "Василий К.",
-    views: 62,
-    readTime: "10 мин",
-    description: ""
-  },
-  {
-    id: 2,
-    title: "Как подобрать и установить скважинный оголовок",
-    url: "/statji/kak-podobrat-i-ustanovit-skvazhinnyj-ogolovok",
-    image: "/image/782840.webp",
-    imageAlt: "Описание для 99vkzk4wws1pgih7e7sx5jnqbfofyuqy",
-    date: "2023-02-24",
-    author: "Василий К.",
-    views: 67,
-    readTime: "10 мин",
-    description: ""
-  },
-  {
-    id: 3,
-    title: "МГБУ на воду",
-    url: "/statji/mgbu-na-vodu",
-    image: "/image/dbd406.webp",
-    imageAlt: "Описание для 1",
-    date: "2023-02-15",
-    author: "Евгений Д.",
-    views: 77,
-    readTime: "1 мин",
-    description: ""
-  },
-  {
-    id: 4,
-    title: "Буровое оборудование на воду",
-    url: "/statji/burovoe-oborudovanie-na-vodu",
-    image: "/image/0c69d5.webp",
-    imageAlt: "Описание для 002",
-    date: "2023-02-14",
-    author: "Евгений Д.",
-    views: 75,
-    readTime: "1 мин",
-    description: ""
+// Состояния для данных
+const articles = ref<Article[]>([]);
+const sectionTitle = ref('Последние статьи');
+const isLoading = ref(false);
+
+// Получение данных из API
+const fetchRecentPosts = async () => {
+  isLoading.value = true;
+  
+  try {
+    const response = await apiService.blocks.getRecentPosts();
+    
+    if (response.data) {
+      // Обновляем заголовок секции
+      if (response.data.title) {
+        sectionTitle.value = response.data.title;
+      }
+      
+      // Получаем массив постов
+      if (response.data.content && Array.isArray(response.data.content.posts)) {
+        // Маппинг данных API в формат для компонента
+        articles.value = response.data.content.posts.map((post: any) => ({
+          id: post.id,
+          title: post.title,
+          url: `/statji/${post.slug}`,
+          image: post.img?.webp_full || post.img?.full || '',
+          imageAlt: post.img?.alt?.title || post.title,
+          date: post.date,
+          author: post.author || '',
+          views: post.meta?.views || 0,
+          readTime: post.meta?.read_time ? `${post.meta.read_time} мин` : '5 мин',
+          description: post.excerpt || ''
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке последних статей:', error);
+  } finally {
+    isLoading.value = false;
   }
-];
+};
+
+onMounted(() => {
+  fetchRecentPosts();
+});
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -70,11 +68,11 @@ const formatDate = (dateString: string): string => {
 </script>
 
 <template>
-  <section class="section recent-posts">
+  <section class="section recent-posts" :class="{ 'is-loading': isLoading }">
     <div class="section-title">
-      <h3 class="section-title-tag">Последние статьи</h3>
+      <h3 class="section-title-tag">{{ sectionTitle }}</h3>
     </div>
-    <ul itemscope itemtype="http://schema.org/Blog" class="cards">
+    <ul v-if="articles.length > 0" itemscope itemtype="http://schema.org/Blog" class="cards">
       <li v-for="article in articles" :key="article.id" class="cards__item">
         <div itemprop="blogPosts" itemscope itemtype="http://schema.org/BlogPosting" class="card card--post">
           <div class="card__background">
@@ -91,7 +89,7 @@ const formatDate = (dateString: string): string => {
             <a :href="article.url" class="">
               <h2 itemprop="headline" class="card__title">{{ article.title }}</h2>
             </a>
-            <div class="card__excerpt">
+            <div v-if="article.description" class="card__excerpt">
               <p itemprop="description">{{ article.description }}</p>
             </div>
             <div class="card__meta">
@@ -119,7 +117,7 @@ const formatDate = (dateString: string): string => {
             <div class="card__actions">
               <div>
                 <span class="button-wrapper">
-                <RouterLink :to="article.url"  class="button button--blue button--black">
+                <RouterLink :to="article.url" class="button button--blue button--black">
                     Подробнее
                 </RouterLink>
                 </span>
@@ -129,9 +127,21 @@ const formatDate = (dateString: string): string => {
         </div>
       </li>
     </ul>
+    <div v-else-if="!isLoading" class="no-articles">
+      <p>Статьи не найдены</p>
+    </div>
   </section>
 </template>
 
 <style scoped>
-/* Ваши стили здесь */
+.is-loading {
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+.no-articles {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
 </style>

@@ -1,51 +1,153 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import apiService from '../../../api/api';
+
+// Состояния для данных
+const title = ref('Остались вопросы?');
+const content = ref('Задайте свой вопрос, а мы постараемся на него ответить!');
+const backgroundImage = ref('https://burspb.com/api/files/cover-help.jpg.webp');
+const isLoading = ref(false);
+
+// Состояния для формы
+const form = ref({
+  name: '',
+  email: '',
+  phone: '',
+  message: ''
+});
+
+// Получение данных из API
+const fetchHelpData = async () => {
+  isLoading.value = true;
+  
+  try {
+    const response = await apiService.blocks.getHelp();
+    
+    if (response.data) {
+      title.value = response.data.title || title.value;
+      content.value = response.data.content || content.value;
+      
+      if (response.data.image) {
+        // Используем WebP версию, если доступна
+        backgroundImage.value = response.data.image.webp_full || 
+                               response.data.image.full || 
+                               backgroundImage.value;
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке данных блока Help:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Обработка отправки формы
+const handleSubmit = async (event: Event) => {
+  event.preventDefault();
+  
+  try {
+    // Проверка заполнения обязательных полей
+    if (!form.value.name || !form.value.phone || !form.value.message) {
+      alert('Пожалуйста, заполните все обязательные поля');
+      return;
+    }
+    
+    // Отправка данных через API
+    const response = await apiService.actions.submitHelp({
+      name: form.value.name,
+      phone: form.value.phone,
+      email: form.value.email,
+      message: form.value.message
+    });
+    
+    // Если успешно, очищаем форму
+    if (response.status === 200) {
+      form.value = {
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      };
+      alert('Ваше сообщение успешно отправлено!');
+    }
+  } catch (error) {
+    console.error('Ошибка при отправке формы:', error);
+    alert('Произошла ошибка при отправке формы. Пожалуйста, попробуйте снова позже.');
+  }
+};
+
+onMounted(() => {
+  fetchHelpData();
+});
 </script>
 
 <template>
-    <section class="section help-form">
-        <div class="help-form__inner" style="background-image: url('https://burspb.com/api/files/cover-help.jpg.webp');">
+    <section class="section help-form" :class="{ 'is-loading': isLoading }">
+        <div class="help-form__inner" :style="{ 'background-image': `url('${backgroundImage}')` }">
             <div class="wrapper">
                 <div>
-                    <h3 class="help-form__inner__title">Остались вопросы?</h3>
-                    <div class="help-form__inner__description"><p>Задайте свой вопрос, а мы постараемся на него ответить!</p></div>
+                    <h3 class="help-form__inner__title">{{ title }}</h3>
+                    <div class="help-form__inner__description"><p>{{ content }}</p></div>
                     <div class="help-form__form formCover">
-                        <form class="form">
+                        <form class="form" @submit="handleSubmit">
                             <div class="form__row">
                                 <label for="name" class="label">
                                     Имя
-
-                                    
                                 </label>
-                                <input type="text" name="name" class="input" />
+                                <input 
+                                  type="text" 
+                                  id="name" 
+                                  name="name" 
+                                  class="input" 
+                                  v-model="form.name" 
+                                  required 
+                                />
                             </div>
 
                             <div class="form__row">
                                 <label for="email" class="label">
                                     Почта
-
-                                    
                                 </label>
-                                <input type="text" name="email" class="input" />
+                                <input 
+                                  type="email" 
+                                  id="email" 
+                                  name="email" 
+                                  class="input" 
+                                  v-model="form.email" 
+                                />
                             </div>
 
                             <div class="form__row">
                                 <label for="phone" class="label">
                                     Телефон
-
-                                    
                                 </label>
-                                <input type="text" name="phone" class="input" />
+                                <input 
+                                  type="tel" 
+                                  id="phone" 
+                                  name="phone" 
+                                  class="input" 
+                                  v-model="form.phone" 
+                                  required 
+                                />
                             </div>
 
                             <div class="form__row">
                                 <label for="message" class="label">
                                     Вопрос
-
-                                    
                                 </label>
-                                <textarea name="message" class="input"></textarea>
+                                <textarea 
+                                  id="message" 
+                                  name="message" 
+                                  class="input" 
+                                  v-model="form.message" 
+                                  required
+                                ></textarea>
                             </div>
-                            <div class="form__row form__row--action"><button class="button button--blue button--cover">Отправить</button></div>
+                            <div class="form__row form__row--action">
+                              <button type="submit" class="button button--blue button--cover">
+                                Отправить
+                              </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -58,7 +160,12 @@
 .help-form {
   width:100%;
   height:auto;
-  position:relative
+  position:relative;
+  
+  &.is-loading {
+    opacity: 0.8;
+    transition: opacity 0.3s;
+  }
 }
 .help-form__image {
   width:100%;
