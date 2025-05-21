@@ -121,10 +121,10 @@ onUnmounted(() => {
         </div>
         <div class="card__inner">
           <h2 itemprop="headline" class="card__title card__title--card">
-            <RouterLink :to="card.link">
+          <RouterLink :to="card.link">
               {{ card.title }}
             </RouterLink>
-          </h2>
+            </h2>
           <div class="card__meta">
             <div class="card__meta__row" style="align-items: center;">
               <div 

@@ -19,10 +19,12 @@ const props = withDefaults(defineProps<PaginationProps>(), {
 
 const emit = defineEmits(['page-change']);
 
-const currentPageNumber = ref(props.currentPage);
+const currentPageNumber = ref(Number(props.currentPage));
 
 watch(() => props.currentPage, (newValue) => {
-  currentPageNumber.value = newValue;
+  currentPageNumber.value = Number(newValue);
+  console.log('Pagination component - currentPage changed:', newValue, typeof newValue);
+  console.log('currentPageNumber updated to:', currentPageNumber.value, typeof currentPageNumber.value);
 });
 
 const pages = computed(() => {
@@ -72,9 +74,12 @@ const prevPage = computed(() => {
 });
 
 const handlePageChange = (page: number) => {
-  if (page !== currentPageNumber.value && page >= 1 && page <= props.totalPages) {
-    currentPageNumber.value = page;
-    emit('page-change', page);
+  const pageNum = Number(page);
+  const currentNum = Number(currentPageNumber.value);
+  
+  if (pageNum !== currentNum && pageNum >= 1 && pageNum <= props.totalPages) {
+    currentPageNumber.value = pageNum;
+    emit('page-change', pageNum);
   }
 };
 
@@ -86,6 +91,12 @@ const getPageUrl = (page: number) => {
 
 <template>
   <nav v-if="totalPages > 1">
+    <!-- Debug info, remove in production -->
+    <!-- <div style="display: none;">
+      currentPageNumber: {{ currentPageNumber }} ({{ typeof currentPageNumber }})
+      props.currentPage: {{ props.currentPage }} ({{ typeof props.currentPage }})
+    </div> -->
+    
     <ul class="pagination">
       <li :class="`pagination__item pagination__item--prev ${!hasPrevPage ? 'pagination__item--prev--inactive' : ''}`">
         <a v-if="hasPrevPage" :href="getPageUrl(prevPage)" @click.prevent="handlePageChange(prevPage)" tabindex="0">
@@ -98,7 +109,7 @@ const getPageUrl = (page: number) => {
       
       <template v-for="(page, index) in pages" :key="index">
         <li v-if="page !== '...'" class="pagination__item">
-          <span v-if="page === currentPageNumber" class="pagination__item__active">
+          <span v-if="Number(page) === Number(currentPageNumber)" class="pagination__item__active">
             <strong>{{ page }}</strong>
           </span>
           <a 

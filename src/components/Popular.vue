@@ -21,7 +21,7 @@ const fetchPopularItems = async () => {
   
   try {
     const response = await apiService.blocks.getPopular();
-    
+
     if (response.data && Array.isArray(response.data.content)) {
       popularItems.value = response.data.content.map((item: any) => ({
         id: item.id || 0,
@@ -123,7 +123,7 @@ onMounted(() => {
       <div class="popular-side">
         <div 
           class="popular__item popular__item--4" 
-            :style="`background-image: url('${popularItems[3].imageUrl}')`"
+          :style="`background-image: url('${popularItems[3].imageUrl}')`"
         >
           <div class="popular__item__content">
             <h3 class="popular__item__content__title">{{ popularItems[3].title }}</h3>

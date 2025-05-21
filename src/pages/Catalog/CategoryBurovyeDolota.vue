@@ -12,6 +12,10 @@ import { CartService } from '../../api/api';
 // Получение параметров маршрута
 const route = useRoute();
 const categorySlug = computed(() => route.params.slug?.toString() || 'burovye-dolota');
+const pageFromRoute = computed(() => {
+  const page = route.params.page;
+  return page ? parseInt(page.toString(), 10) : 1;
+});
 
 // Состояние для данных категории
 const isLoading = ref(true);
@@ -20,7 +24,7 @@ const categoryData = ref<any>(null);
 const nestedCategories = ref<Array<{ title: string, url: string }>>([]);
 const cardsList = ref<Array<any>>([]);
 const categoryTitle = ref('Товары каталога');
-const currentPage = ref(1);
+const currentPage = ref(pageFromRoute.value);
 const totalPages = ref(1);
 
 // Вычисляемые свойства
@@ -54,7 +58,7 @@ const fetchCategoryData = async () => {
   error.value = null;
   
   try {
-    const response = await fetch(`https://burspb.com/api/data/v1/category/slug/${categorySlug.value}`);
+    const response = await fetch(`https://burspb.com/api/data/v1/category/slug/${categorySlug.value}?page=${currentPage.value}`);
     if (!response.ok) {
       throw new Error(`Ошибка при загрузке данных: ${response.status}`);
     }
@@ -90,7 +94,8 @@ const fetchCategoryData = async () => {
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: `${product.meta.price} ₽`,
         showOldPrice: !!product.meta?.price_old,
-        slug: product.slug
+        slug: product.slug,
+        weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
       }));
     } else {
       cardsList.value = [];
@@ -98,8 +103,10 @@ const fetchCategoryData = async () => {
     
     // Пагинация
     if (data.pagination) {
-      currentPage.value = data.pagination.current || 1;
-      totalPages.value = data.pagination.pages_total || 1;
+      console.log('Pagination data:', data.pagination);
+      console.log('Current page type:', typeof data.pagination.current, 'value:', data.pagination.current);
+      currentPage.value = Number(data.pagination.current) || 1;
+      totalPages.value = Number(data.pagination.pages_total) || 1;
     }
     
   } catch (err) {
@@ -130,7 +137,8 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        available: product.available
+        available: product.available,
+        weight: product.weight
       });
     }
   }
@@ -138,10 +146,13 @@ const addToCart = (id: number) => {
 
 // Обработка изменения страницы
 const handlePageChange = (page: number) => {
-  currentPage.value = page;
-  // Прокрутка страницы вверх при смене страницы
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  fetchCategoryData();
+  if (page === 1) {
+    // Для первой страницы переходим на базовый URL без суффикса /page/1
+    window.location.href = `/catalog/category-${categorySlug.value}`;
+  } else {
+    // Для остальных страниц добавляем нужный суффикс
+    window.location.href = `/catalog/category-${categorySlug.value}/page/${page}`;
+  }
 };
 
 // Наблюдение за изменением параметра slug в URL
@@ -152,6 +163,16 @@ watch(() => route.params.slug, (newSlug, oldSlug) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }, { immediate: true });
+
+// Наблюдение за изменением параметра page в URL
+watch(() => route.params.page, (newPage, oldPage) => {
+  if (newPage !== oldPage) {
+    console.log(`Страница изменена: ${oldPage} -> ${newPage}`);
+    currentPage.value = pageFromRoute.value;
+    fetchCategoryData();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
 
 // Инициализация загрузки данных
 onMounted(() => {

@@ -130,6 +130,7 @@ export interface HelpForm {
   phone: string;
   email?: string;
   message: string;
+  type?: string;
 }
 
 export interface CallMeForm {
@@ -138,9 +139,15 @@ export interface CallMeForm {
 }
 
 export interface CostForm {
-  name: string;
+  first_name: string;
+  last_name: string;
   phone: string;
-  details: string;
+  address: string;
+  city: string;
+  inn?: string;
+  payment: string;
+  type: string;
+  weight: number | string;
 }
 
 export interface OrderForm {
@@ -360,11 +367,22 @@ const apiService = {
   
   // Методы для поиска
   search: (query: string): Promise<ApiResponse<any>> => 
-    api.get('/search', { params: { query } }).then(response => ({
-      data: response.data,
-      status: response.status,
-      statusText: response.statusText
-    })),
+    fetch(`https://burspb.com/api/data/v1/search?query=${encodeURIComponent(query)}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Search error: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => ({
+        data: data,
+        status: 200,
+        statusText: 'OK'
+      }))
+      .catch(error => {
+        console.error('Search API error:', error);
+        throw error;
+      }),
   
   // Методы для выборок
   selections: {
@@ -435,6 +453,7 @@ interface CartItem {
   quantity: number;
   slug: string;
   available: boolean;
+  weight?: string; // Вес товара (опциональное поле)
 }
 
 // Класс для управления корзиной с использованием localStorage

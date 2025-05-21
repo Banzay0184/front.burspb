@@ -94,7 +94,8 @@ const fetchProductData = async () => {
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: `${product.meta.price} ₽`,
         showOldPrice: !!product.meta?.price_old,
-        slug: product.slug
+        slug: product.slug,
+        weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
       }));
     } else {
       // Если похожих товаров нет, оставляем пустой массив
@@ -121,7 +122,8 @@ const addToCart = (id: number) => {
       articul: product.articul,
       quantity: 1,
       slug: product.slug,
-      available: product.available
+      available: product.available,
+      weight: product.weight
     });
   }
 };

@@ -112,7 +112,7 @@ onUnmounted(() => {
                   <span>{{ item.articul }}</span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--weight">
-                  <span v-if="item.weight">{{ item.weight }}</span>
+                  <span v-if="item.weight">Вес: {{ item.weight }}</span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--qty">
                   <div class="basket__qty">
