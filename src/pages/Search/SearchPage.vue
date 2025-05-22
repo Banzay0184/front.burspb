@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Cards from '../../components/Cards.vue';
-import apiService, { CartService } from '../../api/api';
+import { CartService } from '../../api/api';
 
 // Получаем данные из URL
 const route = useRoute();
@@ -360,13 +360,7 @@ const formatProduct = (product: any): any => {
   };
 };
 
-const formatCategory = (category: any): any => {
-  return {
-    id: category.id || Math.random() * 100000,
-    title: category.title || category.name || 'Без названия',
-    url: category.url || `/catalog/category-${category.slug || ''}`
-  };
-};
+// Форматирование категорий осуществляется напрямую в коде выше
 
 const formatArticle = (article: any): any => {
   return {

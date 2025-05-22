@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+// Импорты не используются
 
 interface Post {
   id: number;
@@ -32,7 +32,7 @@ interface Post {
   excerpt: string | null;
 }
 
-const props = defineProps<{
+defineProps<{
   posts: Post[];
 }>();
 
@@ -53,18 +53,7 @@ const getCategoryUrl = (category: { slug: string }) => {
   return `/statji/category/${category.slug}`;
 };
 
-// Получаем сокращенное имя автора (Имя + первая буква фамилии)
-const formatAuthor = (author: string) => {
-  if (!author) return '';
-  
-  const parts = author.split(' ');
-  if (parts.length < 2) return author;
-  
-  const firstName = parts[0];
-  const lastName = parts[1];
-  
-  return `${firstName} ${lastName.charAt(0)}.`;
-};
+// Функция formatAuthor удалена, т.к. не используется
 </script>
 
 <template>

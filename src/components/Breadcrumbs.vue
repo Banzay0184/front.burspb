@@ -24,7 +24,7 @@ defineProps<{
         >
           <a v-if="item.url" :href="item.url" itemprop="item">{{ item.title }}</a>
           <span v-else>{{ item.title }}</span>
-          <meta itemprop="position" :content="index + 2" />
+          <meta itemprop="position" :content="String(index + 2)" />
         </li>
       </template>
       

@@ -4,9 +4,9 @@ import apiService from '../api/api.ts'
 
 const isLoading = ref(true)
 const error = ref('')
-const products = ref([])
-const globals = ref(null)
-const rawResponse = ref(null)
+const products = ref<any[]>([])
+const globals = ref<any>(null)
+const rawResponse = ref<any>(null)
 
 const fetchData = async () => {
   isLoading.value = true
@@ -17,8 +17,8 @@ const fetchData = async () => {
     const productsResponse = await apiService.products.getAll()
     rawResponse.value = productsResponse
     
-    // Из логов видно, что массив продуктов находится в posts
-    if (productsResponse.data && productsResponse.data.posts && Array.isArray(productsResponse.data.posts)) {
+    // Проверяем структуру ответа
+    if (productsResponse.data && 'posts' in productsResponse.data && Array.isArray(productsResponse.data.posts)) {
       products.value = productsResponse.data.posts
       console.log('Успешно получены продукты:', products.value.length)
     } else {
@@ -27,7 +27,7 @@ const fetchData = async () => {
     }
     
     // Тестируем получение глобальных настроек
-    const globalsResponse = await apiService.globals.getAll()
+    const globalsResponse = await apiService.getGlobals()
     globals.value = globalsResponse.data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Произошла ошибка при получении данных'

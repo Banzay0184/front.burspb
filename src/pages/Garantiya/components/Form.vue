@@ -120,7 +120,7 @@ const resetForm = (resetAll = true) => {
 // Обработчики снятия ошибок при вводе
 const clearNameError = () => nameError.value = false;
 const clearEmailError = () => { emailError.value = false; emailErrorMessage.value = ''; };
-const clearPhoneError = () => { phoneError.value = false; phoneErrorMessage.value = ''; };
+// PhoneInput компонент сам обрабатывает очистку ошибок
 const clearMessageError = () => messageError.value = false;
 
 // Обработчик ошибки телефона от компонента PhoneInput

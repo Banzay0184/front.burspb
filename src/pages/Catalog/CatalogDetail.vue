@@ -5,7 +5,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Product from './components/Product.vue';
 import Cards from '../../components/Cards.vue';
-import apiService, { CartService } from '../../api/api';
+import { CartService } from '../../api/api';
 
 // Получаем параметры маршрута
 const route = useRoute();

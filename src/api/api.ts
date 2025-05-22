@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 
 // Определение типов для API
 export interface ApiResponse<T> {
@@ -119,7 +119,12 @@ export interface SliderBlock {
 }
 
 export interface BenefitsBlock {
-  // Структура для блока преимуществ
+  content: Array<{
+    id: number;
+    title: string;
+    description: string;
+    icon: string;
+  }>;
 }
 
 // Другие блоки...

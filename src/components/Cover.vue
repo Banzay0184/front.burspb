@@ -2,25 +2,7 @@
 import { ref, onMounted } from 'vue';
 import apiService from '../api/api';
 
-// Интерфейс для структуры блока Cover
-interface CoverData {
-  title: string;
-  content: string;
-  action: {
-    title: string;
-    url: string;
-  } | null;
-  image: {
-    full: string;
-    square_350: string;
-    webp_full: string;
-    webp_square_350: string;
-    alt: {
-      title: string;
-      description: string;
-    };
-  };
-}
+// Используем интерфейс из api.ts для структуры блока Cover
 
 // Состояния для данных
 const title = ref('Читайте наши полезные статьи');

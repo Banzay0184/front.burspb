@@ -160,7 +160,7 @@ const createNewRequest = () => {
 const clearNameError = () => nameError.value = false;
 const clearEmailError = () => emailError.value = false;
 const clearMessageError = () => messageError.value = false;
-const clearPhoneError = () => { phoneError.value = false; phoneErrorMessage.value = ''; };
+// PhoneInput компонент сам обрабатывает очистку ошибок
 
 // Обработчик ошибки телефона от компонента PhoneInput
 const handlePhoneError = (message: string) => {

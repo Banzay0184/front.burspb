@@ -6,7 +6,6 @@ import CategoryNested from '../../components/CategoryNested.vue';
 import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
-import apiService from '../../api/api';
 import { CartService } from '../../api/api';
 
 // Получение параметров маршрута
@@ -26,6 +25,11 @@ const cardsList = ref<Array<any>>([]);
 const categoryTitle = ref('Товары каталога');
 const currentPage = ref(pageFromRoute.value);
 const totalPages = ref(1);
+
+// Параметры фильтрации и сортировки
+const sortParam = ref('price-asc');
+const minPrice = ref<string | null>(null);
+const maxPrice = ref<string | null>(null);
 
 // Вычисляемые свойства
 const hasProducts = computed(() => cardsList.value.length > 0);
@@ -58,7 +62,23 @@ const fetchCategoryData = async () => {
   error.value = null;
   
   try {
-    const response = await fetch(`https://burspb.com/api/data/v1/category/slug/${categorySlug.value}?page=${currentPage.value}`);
+    // Добавляем параметры сортировки и фильтрации в URL запроса
+    const params = new URLSearchParams();
+    params.append('page', currentPage.value.toString());
+    params.append('sort', sortParam.value);
+    
+    // Добавляем фильтры цены, если они заданы
+    if (minPrice.value) {
+      params.append('min_price', minPrice.value);
+    }
+    if (maxPrice.value) {
+      params.append('max_price', maxPrice.value);
+    }
+    
+    const apiUrl = `https://burspb.com/api/data/v1/category/slug/${categorySlug.value}?${params.toString()}`;
+    console.log('API URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error(`Ошибка при загрузке данных: ${response.status}`);
     }
@@ -117,6 +137,21 @@ const fetchCategoryData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Обработчик изменения сортировки
+const handleSortChange = (value: string) => {
+  console.log('Изменение сортировки:', value);
+  sortParam.value = value;
+  fetchCategoryData();
+};
+
+// Обработчик изменения фильтра цены
+const handlePriceFilterChange = (min: string | null, max: string | null) => {
+  console.log('Изменение фильтра цены:', min, max);
+  minPrice.value = min;
+  maxPrice.value = max;
+  fetchCategoryData();
 };
 
 // Обработка добавления в корзину
@@ -206,7 +241,19 @@ onMounted(() => {
       <template v-if="!isLoading && !error">
         <!-- Товары -->
         <section v-if="hasProducts" class="section selected-products">
-          <SectionTitleFilter :title="categoryTitle" />
+          <SectionTitleFilter 
+            :title="categoryTitle"
+            @sort-change="handleSortChange"
+            @price-filter-change="handlePriceFilterChange"
+            :sort-options="[
+              { value: 'popularity-desc', label: 'От популярного к менее популярному' },
+              { value: 'popularity-asc', label: 'От менее популярного к популярному' },
+              { value: 'price-asc', label: 'От дешёвых к дорогим' },
+              { value: 'price-desc', label: 'От дорогих к дешёвым' },
+              { value: 'name-asc', label: 'По названию (А-Я)' },
+              { value: 'name-desc', label: 'По названию (Я-А)' }
+            ]" 
+          />
 
             <Cards
                 :initial-cards="cardsList" 

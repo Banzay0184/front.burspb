@@ -183,7 +183,7 @@ const clearCityError = () => cityError.value = false;
 const clearAddressError = () => addressError.value = false;
 const clearWeightError = () => weightError.value = false;
 const clearInnError = () => innError.value = false;
-const clearPhoneError = () => { phoneError.value = false; phoneErrorMessage.value = ''; };
+// PhoneInput компонент сам обрабатывает очистку ошибок
 
 // Обработчик ошибки телефона от компонента PhoneInput
 const handlePhoneError = (message: string) => {

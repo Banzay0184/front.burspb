@@ -9,13 +9,8 @@ const isSearchActive = ref(false);
 const searchResults = ref<any[]>([]);
 const isSearching = ref(false);
 
-// Структура данных для поиска
-interface SearchableItem {
-  title: string;
-  url: string;
-  type: 'product' | 'article' | 'category';
-  description?: string;
-}
+// Типы для результатов поиска
+type SearchResultType = 'product' | 'article' | 'category';
 
 // Ограничиваем количество результатов для отображения
 const MAX_RESULTS = 5;
@@ -108,7 +103,7 @@ const handleSearchInput = () => {
 };
 
 // Получаем иконку для типа результата
-const getIconForType = (type: 'product' | 'article' | 'category'): string => {
+const getIconForType = (type: SearchResultType): string => {
   switch (type) {
     case 'product': return 'fa-shopping-cart';
     case 'article': return 'fa-file-text-o';

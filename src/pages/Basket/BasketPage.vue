@@ -64,10 +64,11 @@ const removeItem = (id: number) => {
   loadCart();
 };
 
-const clearCart = () => {
-  CartService.clearCart();
-  loadCart();
-};
+// Функция очистки корзины (используется в разработке)
+// const clearCart = () => {
+//   CartService.clearCart();
+//   loadCart();
+// };
 
 // Инициализация
 onMounted(() => {
@@ -100,7 +101,7 @@ onUnmounted(() => {
                   <span :style="`background-image: url('${item.image}');`"></span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--title">
-                  <RouterLink :to="`/catalog/product-${item.slug}`">
+                  <RouterLink :to="`/catalog/product-${item.slug}`" style="color: #006079; text-decoration: underline">
                     {{ item.title }}
                   </RouterLink>
                   <span class="basket__list__item__cell--title-price">
@@ -173,13 +174,6 @@ onUnmounted(() => {
                     </RouterLink>
                   </span>
                 </div>
-                <div style="margin-top: 10px;">
-                  <span class="button-wrapper">
-                    <button @click="clearCart" class="button button--outline">
-                      Очистить корзину
-                    </button>
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -210,6 +204,7 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
+
 .empty-basket-action .button {
   width: auto;
   padding-left: 3rem;

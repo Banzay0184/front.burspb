@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Breadcrumbs from '../../../components/Breadcrumbs.vue';
-import apiService, { CartService } from '../../../api/api';
+import { CartService } from '../../../api/api';
 
 // Маршрутизация
 const router = useRouter();
@@ -59,10 +59,7 @@ const breadcrumbs = ref([
   { title: 'Оформление заказа', url: '' }
 ]);
 
-// Вычисляемые свойства для корзины
-const cartTotal = computed(() => {
-  return CartService.getCartTotal().toLocaleString('ru-RU');
-});
+// Вычисляемые свойства для корзины будут добавлены по мере необходимости
 
 // Загрузка корзины
 const loadCart = () => {

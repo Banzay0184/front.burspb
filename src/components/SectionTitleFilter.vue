@@ -10,7 +10,7 @@ interface Props {
   }>
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   title: 'Товары каталога',
   showFilter: true,
   sortOptions: () => [
