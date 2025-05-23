@@ -20,10 +20,8 @@ const fetchData = async () => {
     // Проверяем структуру ответа
     if (productsResponse.data && 'posts' in productsResponse.data && Array.isArray(productsResponse.data.posts)) {
       products.value = productsResponse.data.posts
-      console.log('Успешно получены продукты:', products.value.length)
     } else {
       products.value = []
-      console.warn('Не удалось найти массив продуктов в ответе', productsResponse)
     }
     
     // Тестируем получение глобальных настроек
@@ -31,7 +29,6 @@ const fetchData = async () => {
     globals.value = globalsResponse.data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Произошла ошибка при получении данных'
-    console.error('Ошибка API:', err)
   } finally {
     isLoading.value = false
   }

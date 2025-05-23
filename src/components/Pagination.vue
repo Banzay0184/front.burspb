@@ -23,8 +23,6 @@ const currentPageNumber = ref(Number(props.currentPage));
 
 watch(() => props.currentPage, (newValue) => {
   currentPageNumber.value = Number(newValue);
-  console.log('Pagination component - currentPage changed:', newValue, typeof newValue);
-  console.log('currentPageNumber updated to:', currentPageNumber.value, typeof currentPageNumber.value);
 });
 
 const pages = computed(() => {

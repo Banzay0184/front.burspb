@@ -6,6 +6,7 @@ import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
 import CategoriesFull from './components/CategoriesFull.vue';
 import { CartService } from '../../api/api';
+import { getApiUrl } from '../../api/api';
 
 // Состояние компонента
 const cardsList = ref<any[]>([]);
@@ -43,7 +44,6 @@ const fetchProducts = async () => {
       const minPrice = parseInt(priceMin.value);
       if (!isNaN(minPrice) && minPrice >= 0) {
         params.append('price_min', minPrice.toString());
-        console.log('Добавлен параметр price_min:', minPrice);
       }
     }
     
@@ -51,14 +51,12 @@ const fetchProducts = async () => {
       const maxPrice = parseInt(priceMax.value);
       if (!isNaN(maxPrice) && maxPrice >= 0) {
         params.append('price_max', maxPrice.toString());
-        console.log('Добавлен параметр price_max:', maxPrice);
       }
     }
     
     // Выполняем запрос к API
     const queryString = params.toString() ? `?${params.toString()}` : '';
-    const apiUrl = `https://burspb.com/api/data/v1/products/${queryString}`;
-    console.log('Запрос к API:', apiUrl);
+    const apiUrl = getApiUrl(`products/${queryString}`);
     
     // Устанавливаем таймаут для запроса
     const controller = new AbortController();
@@ -79,10 +77,9 @@ const fetchProducts = async () => {
     }
     
     const data = await response.json();
-    console.log('Полученные данные:', data);
     
     if (data.params) {
-      console.log('Параметры, полученные от API:', data.params);
+      // Обрабатываем параметры от API
     }
     
     // Обрабатываем данные пагинации
@@ -100,16 +97,16 @@ const fetchProducts = async () => {
     // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
     cardsList.value = data.posts.map((product: any) => ({
       id: product.id,
-      title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : product.title,
+      title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
       link: `/catalog/product-${product.slug}`,
-      image: product.img?.webp_square_350 || product.img?.square_350 || '',
-      alt: product.img?.alt?.description || product.title,
-      available: product.meta?.availability || false,
+      image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+      alt: product.img?.alt?.description || product.title || 'Изображение товара',
+      available: product.meta?.availability !== false,
       articul: product.meta?.artikul || '',
       oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-      currentPrice: `${product.meta?.price || 0} ₽`,
+      currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
       showOldPrice: !!product.meta?.price_old,
-      slug: product.slug
+      slug: product.slug || ''
     }));
     
     // Очищаем дополнительные карточки, так как теперь используем пагинацию

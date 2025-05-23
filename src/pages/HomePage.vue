@@ -9,6 +9,8 @@ import Popular from '../components/Popular.vue';
 import RecentPosts from '../components/RecentPosts.vue';
 import Cards from '../components/Cards.vue';
 import { CartService } from '../api/api';
+import apiService from '../api/api';
+import { getApiUrl } from '../api/api';
 
 // Состояние компонента для карточек товаров
 const cardsList = ref<any[]>([]);
@@ -33,7 +35,7 @@ const fetchPopularProducts = async () => {
       per_page: '8'  // Получаем первые 8 популярных продуктов
     });
     
-    const response = await fetch(`https://burspb.com/api/data/v1/products/?${params.toString()}`);
+    const response = await fetch(getApiUrl(`products/?${params.toString()}`));
     
     if (!response.ok) {
       throw new Error(`Ошибка загрузки данных: ${response.status}`);
@@ -45,36 +47,36 @@ const fetchPopularProducts = async () => {
     if (data.posts && data.posts.length > 0) {
       cardsList.value = data.posts.slice(0, 4).map((product: any) => ({
         id: product.id,
-        title: product.title.length > 40 ? `${product.title.substring(0, 40)}…` : product.title,
+        title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
         link: `/catalog/product-${product.slug}`,
-        image: product.img.webp_square_350 || product.img.square_350 || '',
-        alt: product.img.alt?.description || product.title,
-        available: product.meta.availability,
-        articul: product.meta.artikul || '',
-        oldPrice: product.meta.price_old ? `${product.meta.price_old} ₽` : '',
-        currentPrice: `${product.meta.price} ₽`,
-        showOldPrice: !!product.meta.price_old,
-        slug: product.slug,
+        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+        alt: product.img?.alt?.description || product.title || 'Изображение товара',
+        available: product.meta?.availability !== false,
+        articul: product.meta?.artikul || '',
+        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+        showOldPrice: !!product.meta?.price_old,
+        slug: product.slug || '',
         quantity: 1,
-        weight: product.meta.weight ? `${product.meta.weight} кг` : ''
+        weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
       }));
       
       // Если есть еще продукты, добавляем их в дополнительные для "Загрузить еще"
       if (data.posts.length > 4) {
         cardsListAdditional.value = data.posts.slice(4).map((product: any) => ({
           id: product.id,
-          title: product.title.length > 40 ? `${product.title.substring(0, 40)}…` : product.title,
+          title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
           link: `/catalog/product-${product.slug}`,
-          image: product.img.webp_square_350 || product.img.square_350 || '',
-          alt: product.img.alt?.description || product.title,
-          available: product.meta.availability,
-          articul: product.meta.artikul || '',
-          oldPrice: product.meta.price_old ? `${product.meta.price_old} ₽` : '',
-          currentPrice: `${product.meta.price} ₽`,
-          showOldPrice: !!product.meta.price_old,
-          slug: product.slug,
+          image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+          alt: product.img?.alt?.description || product.title || 'Изображение товара',
+          available: product.meta?.availability !== false,
+          articul: product.meta?.artikul || '',
+          oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+          currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+          showOldPrice: !!product.meta?.price_old,
+          slug: product.slug || '',
           quantity: 1,
-          weight: product.meta.weight ? `${product.meta.weight} кг` : ''
+          weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
         }));
       }
     }

@@ -1,5 +1,27 @@
 import axios, { type AxiosInstance } from 'axios';
 
+// Конфигурация API URL в зависимости от окружения
+const getApiBaseUrl = () => {
+  // В режиме разработки используем прокси
+  if (import.meta.env.DEV) {
+    return '/api/data/v1';
+  }
+  // В продакшене используем относительные пути
+  return '/api/data/v1';
+};
+
+// Экспортируемая функция для получения API URL
+export const getApiUrl = (endpoint: string = '') => {
+  const baseUrl = getApiBaseUrl();
+  return endpoint ? `${baseUrl}/${endpoint.replace(/^\//, '')}` : baseUrl;
+};
+
+// Функция для получения URL файлов (статические ресурсы)
+export const getFileUrl = (path: string) => {
+  const baseUrl = import.meta.env.DEV ? 'https://burspb.com' : '';
+  return `${baseUrl}/api/files/${path.replace(/^\//, '')}`;
+};
+
 // Определение типов для API
 export interface ApiResponse<T> {
   data: T;
@@ -175,7 +197,7 @@ export interface QuickOrderForm {
 
 // Создание экземпляра axios
 const api: AxiosInstance = axios.create({
-  baseURL: 'https://burspb.com/api/data/v1',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -371,23 +393,22 @@ const apiService = {
   },
   
   // Методы для поиска
-  search: (query: string): Promise<ApiResponse<any>> => 
-    fetch(`https://burspb.com/api/data/v1/search?query=${encodeURIComponent(query)}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Search error: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => ({
-        data: data,
-        status: 200,
-        statusText: 'OK'
-      }))
-      .catch(error => {
-        console.error('Search API error:', error);
-        throw error;
-      }),
+  search: {
+    searchPosts: async (query: string): Promise<ApiResponse<any>> => {
+      const response = await fetch(getApiUrl(`search?query=${encodeURIComponent(query)}`));
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка поиска: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return {
+        data,
+        status: response.status,
+        statusText: response.statusText
+      };
+    },
+  },
   
   // Методы для выборок
   selections: {
@@ -473,7 +494,6 @@ export class CartService {
     try {
       return JSON.parse(cartData);
     } catch (error) {
-      console.error('Ошибка при получении данных корзины:', error);
       return [];
     }
   }

@@ -1,0 +1,17 @@
+User-agent: *
+Sitemap: https://burspb.com/sitemap.xml
+Disallow: /app/
+Disallow: /app
+Disallow: /basket/
+Disallow: /basket
+Disallow: /search/
+Disallow: /search
+Disallow: /*?
+Disallow: */*.ttf*
+Disallow: */*.woff*
+Disallow: */*.woff2*
+Disallow: */*.eot*
+Disallow: */*.svg*
+Disallow: */*.ico*
+Disallow: */*.css*
+Disallow: */*.js* 

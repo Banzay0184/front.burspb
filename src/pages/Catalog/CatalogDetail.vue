@@ -5,7 +5,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Product from './components/Product.vue';
 import Cards from '../../components/Cards.vue';
-import { CartService } from '../../api/api';
+import { CartService, getApiUrl } from '../../api/api';
 
 // Получаем параметры маршрута
 const route = useRoute();
@@ -27,7 +27,7 @@ const fetchProductData = async () => {
   
   try {
     // Запрос данных о продукте
-    const response = await fetch(`https://burspb.com/api/data/v1/product/slug/${productSlug.value}`);
+    const response = await fetch(getApiUrl(`product/slug/${productSlug.value}`));
     
     if (!response.ok) {
       throw new Error(`Ошибка загрузки данных: ${response.status}`);

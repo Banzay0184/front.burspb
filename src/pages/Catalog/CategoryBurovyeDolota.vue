@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import CategoryNested from '../../components/CategoryNested.vue';
 import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
 import { CartService } from '../../api/api';
+import { getApiUrl } from '../../api/api';
 
 // Получение параметров маршрута
 const route = useRoute();
+const router = useRouter();
 const categorySlug = computed(() => route.params.slug?.toString() || 'burovye-dolota');
 const pageFromRoute = computed(() => {
   const page = route.params.page;
@@ -17,7 +19,7 @@ const pageFromRoute = computed(() => {
 });
 
 // Состояние для данных категории
-const isLoading = ref(true);
+const isLoading = ref(false);
 const error = ref<string | null>(null);
 const categoryData = ref<any>(null);
 const nestedCategories = ref<Array<{ title: string, url: string }>>([]);
@@ -25,6 +27,7 @@ const cardsList = ref<Array<any>>([]);
 const categoryTitle = ref('Товары каталога');
 const currentPage = ref(pageFromRoute.value);
 const totalPages = ref(1);
+
 
 // Параметры фильтрации и сортировки
 const sortParam = ref('price-asc');
@@ -58,6 +61,11 @@ const breadcrumbs = computed(() => {
 
 // Загрузка данных категории
 const fetchCategoryData = async () => {
+  // Защита от повторных запросов
+  if (isLoading.value) {
+    return;
+  }
+  
   isLoading.value = true;
   error.value = null;
   
@@ -75,8 +83,7 @@ const fetchCategoryData = async () => {
       params.append('max_price', maxPrice.value);
     }
     
-    const apiUrl = `https://burspb.com/api/data/v1/category/slug/${categorySlug.value}?${params.toString()}`;
-    console.log('API URL:', apiUrl);
+    const apiUrl = getApiUrl(`category/slug/${categorySlug.value}?${params.toString()}`);
     
     const response = await fetch(apiUrl);
     if (!response.ok) {
@@ -105,16 +112,16 @@ const fetchCategoryData = async () => {
     if (data.posts && Array.isArray(data.posts)) {
       cardsList.value = data.posts.map((product: any) => ({
         id: product.id,
-        title: product.title,
+        title: product.title || 'Без названия',
         link: `/catalog/product-${product.slug}`,
-        image: product.img.webp_square_350 || product.img.square_350 || '',
-        alt: product.img.alt?.description || product.title,
-        available: product.meta.availability,
-        articul: product.meta.artikul || '',
+        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+        alt: product.img?.alt?.description || product.title || 'Изображение товара',
+        available: product.meta?.availability !== false,
+        articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-        currentPrice: `${product.meta.price} ₽`,
+        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
         showOldPrice: !!product.meta?.price_old,
-        slug: product.slug,
+        slug: product.slug || '',
         weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
       }));
     } else {
@@ -123,14 +130,10 @@ const fetchCategoryData = async () => {
     
     // Пагинация
     if (data.pagination) {
-      console.log('Pagination data:', data.pagination);
-      console.log('Current page type:', typeof data.pagination.current, 'value:', data.pagination.current);
-      currentPage.value = Number(data.pagination.current) || 1;
       totalPages.value = Number(data.pagination.pages_total) || 1;
     }
     
   } catch (err) {
-    console.error('Ошибка при получении данных категории:', err);
     error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
     cardsList.value = [];
     nestedCategories.value = [];
@@ -141,17 +144,19 @@ const fetchCategoryData = async () => {
 
 // Обработчик изменения сортировки
 const handleSortChange = (value: string) => {
-  console.log('Изменение сортировки:', value);
   sortParam.value = value;
-  fetchCategoryData();
+  currentPage.value = 1; // Сбрасываем на первую страницу
+  // Временно отключено для отладки
+  // fetchCategoryData();
 };
 
 // Обработчик изменения фильтра цены
 const handlePriceFilterChange = (min: string | null, max: string | null) => {
-  console.log('Изменение фильтра цены:', min, max);
   minPrice.value = min;
   maxPrice.value = max;
-  fetchCategoryData();
+  currentPage.value = 1; // Сбрасываем на первую страницу
+  // Временно отключено для отладки
+  // fetchCategoryData();
 };
 
 // Обработка добавления в корзину
@@ -183,36 +188,28 @@ const addToCart = (id: number) => {
 const handlePageChange = (page: number) => {
   if (page === 1) {
     // Для первой страницы переходим на базовый URL без суффикса /page/1
-    window.location.href = `/catalog/category-${categorySlug.value}`;
+    router.push(`/catalog/category-${categorySlug.value}`);
   } else {
     // Для остальных страниц добавляем нужный суффикс
-    window.location.href = `/catalog/category-${categorySlug.value}/page/${page}`;
+    router.push(`/catalog/category-${categorySlug.value}/page/${page}`);
   }
 };
 
-// Наблюдение за изменением параметра slug в URL
-watch(() => route.params.slug, (newSlug, oldSlug) => {
-  if (newSlug !== oldSlug) {
-    console.log(`Категория изменена: ${oldSlug} -> ${newSlug}`);
-    fetchCategoryData();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}, { immediate: true });
-
-// Наблюдение за изменением параметра page в URL
-watch(() => route.params.page, (newPage, oldPage) => {
-  if (newPage !== oldPage) {
-    console.log(`Страница изменена: ${oldPage} -> ${newPage}`);
-    currentPage.value = pageFromRoute.value;
-    fetchCategoryData();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-});
-
-// Инициализация загрузки данных
-onMounted(() => {
-  fetchCategoryData();
-});
+// Наблюдение за изменением параметров маршрута
+watch(
+  [() => route.params.slug, () => route.params.page],
+  ([newSlug, newPage], [oldSlug, oldPage]) => {
+    // Загружаем данные при первой загрузке или при реальном изменении параметров
+    if (!oldSlug || newSlug !== oldSlug || newPage !== oldPage) {
+      currentPage.value = pageFromRoute.value;
+      fetchCategoryData();
+      if (oldSlug) { // Прокручиваем только при изменении, не при первой загрузке
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  },
+  { immediate: true } // Выполняем при первой загрузке
+);
 </script>
 
 <template>

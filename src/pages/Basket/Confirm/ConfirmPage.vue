@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Breadcrumbs from '../../../components/Breadcrumbs.vue';
-import { CartService } from '../../../api/api';
+import { CartService, getApiUrl } from '../../../api/api';
 
 // Маршрутизация
 const router = useRouter();
@@ -130,7 +130,7 @@ const submitOrder = async () => {
     };
     
     // Отправляем запрос
-    const response = await fetch('https://burspb.com/api/data/v1/action/order', {
+    const response = await fetch(getApiUrl('action/order'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

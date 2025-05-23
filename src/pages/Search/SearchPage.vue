@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Cards from '../../components/Cards.vue';
 import { CartService } from '../../api/api';
+import { getApiUrl, getFileUrl } from '../../api/api';
 
 // Получаем данные из URL
 const route = useRoute();
@@ -49,8 +50,6 @@ const performSearch = async () => {
   articleResults.value = [];
   
   try {
-    console.log('Выполняем поиск по запросу:', searchQuery.value);
-    
     // Добавляем результаты для запроса "Буровые долота"
     const searchTerms = searchQuery.value.toLowerCase().split(' ');
     if (searchTerms.includes('буровые') || searchTerms.includes('долота') || searchTerms.includes('буровое')) {
@@ -72,14 +71,7 @@ const performSearch = async () => {
       }
     }
     
-    console.log('Результаты поиска:', {
-      products: productResults.value.length,
-      categories: categoryResults.value.length,
-      articles: articleResults.value.length
-    });
-    
   } catch (err) {
-    console.error('Ошибка при поиске:', err);
     error.value = err instanceof Error ? err.message : 'Ошибка при выполнении поиска';
     
     // Даже при ошибке, показываем какие-то результаты
@@ -91,35 +83,26 @@ const performSearch = async () => {
 
 // Добавление товаров по категории "Буровые долота"
 const addBurovyeDolotaProducts = () => {
-  productResults.value.push({
-    id: 999,
-    title: 'Долото PDC 161мм 3-88',
-    link: '/catalog/product-doloto-pdc-161mm-3-88',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Долото PDC 161мм 3-88',
-    available: true,
-    articul: '00262',
-    oldPrice: '',
-    currentPrice: '9 800 ₽',
-    showOldPrice: false,
-    slug: 'doloto-pdc-161mm-3-88',
-    weight: '9 кг'
-  });
-  
-  productResults.value.push({
-    id: 998,
-    title: 'Долото III лопастное Д170 З-88н (Пика)',
-    link: '/catalog/product-doloto-III-lopastnoe-d170',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Долото III лопастное Д170 З-88н',
-    available: true,
-    articul: '00263',
-    oldPrice: '20 000 ₽',
-    currentPrice: '19 000 ₽',
-    showOldPrice: true,
-    slug: 'doloto-III-lopastnoe-d170',
-    weight: '8 кг'
-  });
+  productResults.value.push(
+    {
+      id: 1,
+      title: 'Долото PDC 132 мм',
+      price: '45000 ₽',
+      link: '/catalog/product-doloto-pdc-132mm',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'PDC-132'
+    },
+    {
+      id: 2,
+      title: 'Долото лопастное 146 мм',
+      price: '25000 ₽',
+      link: '/catalog/product-doloto-lopastnoe-146mm',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'LP-146'
+    }
+  );
   
   categoryResults.value.push({
     id: 100,
@@ -136,50 +119,26 @@ const addBurovyeDolotaProducts = () => {
 
 // Добавление товаров по категории "Оборудование"
 const addEquipmentProducts = () => {
-  productResults.value.push({
-    id: 997,
-    title: 'Насос скважинный Belamos 2,5TF-66',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-2-5tf-66',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00577',
-    oldPrice: '',
-    currentPrice: '17 538 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-2-5tf-66',
-    weight: '5 кг'
-  });
-  
-  productResults.value.push({
-    id: 996,
-    title: 'Насос скважинный Belamos 2,5TF-45',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-2-5tf-45',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00576',
-    oldPrice: '',
-    currentPrice: '14 151 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-2-5tf-45',
-    weight: '4.5 кг'
-  });
-  
-  productResults.value.push({
-    id: 995,
-    title: 'Насос скважинный Belamos TF3-150 45 м',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-tf3-150',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00591',
-    oldPrice: '',
-    currentPrice: '36 379 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-tf3-150',
-    weight: '12 кг'
-  });
+  productResults.value.push(
+    {
+      id: 3,
+      title: 'Буровая установка MGBU-1',
+      price: '850000 ₽',
+      link: '/catalog/product-mgbu-1',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'MGBU-1'
+    },
+    {
+      id: 4,
+      title: 'Буровые штанги 2м',
+      price: '12000 ₽',
+      link: '/catalog/product-shtangi-2m',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'SHT-2M'
+    }
+  );
   
   categoryResults.value.push({
     id: 102,
@@ -196,50 +155,26 @@ const addEquipmentProducts = () => {
 
 // Добавление товаров по категории "Насосы"
 const addPumpProducts = () => {
-  productResults.value.push({
-    id: 994,
-    title: 'Насос скважинный Belamos 2,5TF-66',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-2-5tf-66',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00577',
-    oldPrice: '',
-    currentPrice: '17 538 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-2-5tf-66',
-    weight: '5 кг'
-  });
-  
-  productResults.value.push({
-    id: 993,
-    title: 'Насос скважинный Belamos 2,5TF-45',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-2-5tf-45',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00576',
-    oldPrice: '',
-    currentPrice: '14 151 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-2-5tf-45',
-    weight: '4.5 кг'
-  });
-  
-  productResults.value.push({
-    id: 992,
-    title: 'Насос скважинный Belamos TF3-150 45 м',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-tf3-150',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00591',
-    oldPrice: '',
-    currentPrice: '36 379 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-tf3-150',
-    weight: '12 кг'
-  });
+  productResults.value.push(
+    {
+      id: 5,
+      title: 'Буровой насос НБ-200',
+      price: '125000 ₽',
+      link: '/catalog/product-nasos-nb-200',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'NB-200'
+    },
+    {
+      id: 6,
+      title: 'Насос НШ-50',
+      price: '35000 ₽',
+      link: '/catalog/product-nasos-nsh-50',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'NSH-50'
+    }
+  );
   
   categoryResults.value.push({
     id: 104,
@@ -250,37 +185,44 @@ const addPumpProducts = () => {
 
 // Добавление стандартных товаров при неизвестном запросе
 const addDefaultProducts = () => {
-  // Долота
-  productResults.value.push({
-    id: 991,
-    title: 'Долото PDC 161мм 3-88',
-    link: '/catalog/product-doloto-pdc-161mm-3-88',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Долото PDC 161мм 3-88',
-    available: true,
-    articul: '00262',
-    oldPrice: '',
-    currentPrice: '9 800 ₽',
-    showOldPrice: false,
-    slug: 'doloto-pdc-161mm-3-88',
-    weight: '9 кг'
-  });
-  
-  // Насосы
-  productResults.value.push({
-    id: 990,
-    title: 'Насос скважинный Belamos 2,5TF-66',
-    link: '/catalog/product-nasos-skvazhinnyj-belamos-2-5tf-66',
-    image: 'https://burspb.com/api/files/200.jpg.webp',
-    alt: 'Насос скважинный Belamos',
-    available: true,
-    articul: '00577',
-    oldPrice: '',
-    currentPrice: '17 538 ₽',
-    showOldPrice: false,
-    slug: 'nasos-skvazhinnyj-belamos-2-5tf-66',
-    weight: '5 кг'
-  });
+  productResults.value.push(
+    {
+      id: 7,
+      title: 'Долото шарошечное 215 мм',
+      price: '95000 ₽',
+      link: '/catalog/product-doloto-sharoshechnoe-215mm',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'SH-215'
+    },
+    {
+      id: 8,
+      title: 'Колонковая труба 73 мм',
+      price: '8500 ₽',
+      link: '/catalog/product-truba-kolonkovaya-73mm',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'KT-73'
+    },
+    {
+      id: 9,
+      title: 'Переходник буровой Z-50',
+      price: '4500 ₽',
+      link: '/catalog/product-perehodnik-z50',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'Z-50'
+    },
+    {
+      id: 10,
+      title: 'Вертлюг для МГБУ',
+      price: '22000 ₽',
+      link: '/catalog/product-vertlyug-mgbu',
+      image: getFileUrl('200.jpg.webp'),
+      available: true,
+      articul: 'VT-MGBU'
+    }
+  );
   
   // Категории
   categoryResults.value.push({
@@ -299,20 +241,16 @@ const addDefaultProducts = () => {
 // Поиск через API
 const searchViaAPI = async () => {
   try {
-    console.log('Выполняем поиск через API:', searchQuery.value);
-    const response = await fetch(`https://burspb.com/api/data/v1/search?query=${encodeURIComponent(searchQuery.value)}`);
+    const response = await fetch(getApiUrl(`search?query=${encodeURIComponent(searchQuery.value)}`));
     
     if (!response.ok) {
       throw new Error(`Ошибка при поиске через API: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Ответ API:', data);
     
     // Проверяем, есть ли в ответе массив 'posts'
     if (data && data.posts && Array.isArray(data.posts) && data.posts.length > 0) {
-      console.log('Найдены posts в API:', data.posts.length);
-      
       data.posts.forEach((post: any) => {
         if (post) {
           // Проверяем, является ли пост товаром
@@ -330,14 +268,7 @@ const searchViaAPI = async () => {
       });
     }
     
-    console.log('Результаты после поиска через API:', {
-      products: productResults.value.length,
-      categories: categoryResults.value.length,
-      articles: articleResults.value.length
-    });
-    
   } catch (err) {
-    console.error('Ошибка при поиске через API:', err);
     // Не выбрасываем ошибку дальше, так как этот метод вызывается только как запасной вариант
   }
 };
@@ -398,7 +329,6 @@ const addToCart = (id: number) => {
 
 // Выполняем поиск при монтировании компонента
 onMounted(() => {
-  console.log('SearchPage mounted, searchQuery:', searchQuery.value);
   if (searchQuery.value) {
     performSearch();
   }
@@ -406,7 +336,6 @@ onMounted(() => {
 
 // Следим за изменением параметра запроса
 watch(() => route.query.q, (newQuery) => {
-  console.log('Изменился параметр запроса:', newQuery);
   if (newQuery) {
     performSearch();
   } else {
