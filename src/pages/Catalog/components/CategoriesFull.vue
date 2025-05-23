@@ -123,7 +123,6 @@ const fetchGlobalData = async () => {
       categories.value = transformCategories(categoriesData)
     }
   } catch (error) {
-    console.error('Ошибка при получении данных категорий:', error)
   }
 }
 

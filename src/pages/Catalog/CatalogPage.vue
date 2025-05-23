@@ -113,7 +113,6 @@ const fetchProducts = async () => {
     cardsListAdditional.value = [];
     
   } catch (err: any) {
-    console.error('Ошибка при получении данных продуктов:', err);
     
     if (err.name === 'AbortError') {
       error.value = 'Превышено время ожидания ответа от сервера. Пожалуйста, попробуйте позже.';

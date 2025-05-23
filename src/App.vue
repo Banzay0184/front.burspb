@@ -14,7 +14,6 @@ const fetchGlobalData = async () => {
       updateFavicon(response.data.favicon);
     }
   } catch (error) {
-    console.error('Ошибка при получении данных фавиконки:', error);
   }
 };
 

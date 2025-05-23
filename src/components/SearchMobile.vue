@@ -26,12 +26,12 @@ const performSearch = async () => {
   
   try {
     // Используем API для поиска
-    const response = await apiService.search(searchQuery.value);
+    const response = await apiService.search.searchPosts(searchQuery.value);
     
-    if (response.data && Array.isArray(response.data)) {
+    if (response.data && response.data.posts && Array.isArray(response.data.posts)) {
       // Преобразуем данные из API в формат SearchableItem
-      searchResults.value = response.data
-        .map((item) => ({
+      searchResults.value = response.data.posts
+        .map((item: any) => ({
           title: item.title || item.name || '',
           url: item.url || '',
           type: item.type || 'product',
@@ -42,7 +42,6 @@ const performSearch = async () => {
       searchResults.value = [];
     }
   } catch (error) {
-    console.error('Ошибка при поиске:', error);
     searchResults.value = [];
   } finally {
     isSearching.value = false;

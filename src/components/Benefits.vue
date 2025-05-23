@@ -19,7 +19,6 @@ const fetchBenefits = async () => {
   
   try {
     const response = await apiService.blocks.getBenefits();
-    console.log('Ответ API блока Benefits:', response);
     
     if (response.data && Array.isArray(response.data.content)) {
       benefits.value = response.data.content.map((item: any) => ({
@@ -29,13 +28,10 @@ const fetchBenefits = async () => {
         description: item.description || ''
       }));
       
-      console.log('Обработанные данные Benefits:', benefits.value);
     } else {
-      console.warn('Неожиданная структура данных для Benefits:', response.data);
       hasError.value = true;
     }
   } catch (error) {
-    console.error('Ошибка при получении Benefits блока:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;

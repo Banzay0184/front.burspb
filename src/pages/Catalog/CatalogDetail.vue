@@ -103,7 +103,6 @@ const fetchProductData = async () => {
     }
     
   } catch (err) {
-    console.error('Ошибка при получении данных продукта:', err);
     error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
   } finally {
     isLoading.value = false;

@@ -21,7 +21,6 @@ const fetchGratitudeData = async () => {
   
   try {
     const response = await apiService.blocks.getGratitude();
-    console.log('Ответ API блока Gratitude:', response);
     
     if (response.data) {
       if (Array.isArray(response.data.list)) {
@@ -35,18 +34,10 @@ const fetchGratitudeData = async () => {
       mainImage.value = response.data.image?.webp_full || response.data.image?.full || '/image/44b0dc.webp';
       mainTitle.value = response.data.title || 'Спасибо за доверие';
       mainContent.value = response.data.content || '';
-      
-      console.log('Обработанные данные Gratitude:', {
-        items: gratitudeItems.value,
-        mainImage: mainImage.value,
-        mainTitle: mainTitle.value
-      });
     } else {
-      console.warn('Неожиданная структура данных для Gratitude:', response.data);
       hasError.value = true;
     }
   } catch (error) {
-    console.error('Ошибка при получении Gratitude блока:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;

@@ -51,7 +51,6 @@ const fetchRecentPosts = async () => {
       }
     }
   } catch (error) {
-    console.error('Ошибка при загрузке последних статей:', error);
   } finally {
     isLoading.value = false;
   }

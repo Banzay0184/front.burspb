@@ -21,7 +21,6 @@ const fetchSeoData = async () => {
       content.value = response.data.content || content.value;
     }
   } catch (error) {
-    console.error('Ошибка при загрузке данных блока SEO:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;

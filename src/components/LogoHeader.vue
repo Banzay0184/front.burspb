@@ -13,7 +13,6 @@ const fetchGlobalData = async () => {
       logoAlt.value = response.data.siteTitle || logoAlt.value;
     }
   } catch (error) {
-    console.error('Ошибка при получении данных логотипа:', error);
   }
 };
 

@@ -41,7 +41,6 @@ const fetchGlobalData = async () => {
       categoriesFull.value = buildCategoryTree(response.data.navigation.categories_full);
     }
   } catch (error) {
-    console.error('Ошибка при получении данных категорий для мобильной навигации:', error);
   }
 };
 

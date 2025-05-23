@@ -138,7 +138,6 @@ const handleSubmit = async (event: Event) => {
         serverError.value = 'Произошла ошибка при отправке. Пожалуйста, попробуйте позже.';
       }
     } catch (error) {
-      console.error('Ошибка при отправке формы:', error);
       serverError.value = 'Произошла ошибка при отправке. Пожалуйста, попробуйте позже.';
     } finally {
       submitInProgress.value = false;

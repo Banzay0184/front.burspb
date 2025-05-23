@@ -34,7 +34,6 @@ const fetchCoverData = async () => {
       }
     }
   } catch (error) {
-    console.error('Ошибка при загрузке данных блока Cover:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;

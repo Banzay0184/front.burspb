@@ -23,7 +23,6 @@ const fetchGlobalData = async () => {
       phoneAlt.value = response.data.contact.phone_alt || phoneAlt.value;
     }
   } catch (error) {
-    console.error('Ошибка при получении данных телефонов:', error);
   }
 };
 

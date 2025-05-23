@@ -74,7 +74,6 @@ const fetchGlobalData = async () => {
       }
     }
   } catch (error) {
-    console.error('Ошибка при получении глобальных данных для футера:', error);
   }
 };
 

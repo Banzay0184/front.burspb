@@ -74,7 +74,6 @@ const fetchPostData = async () => {
       error.value = 'Не удалось загрузить статью. Пожалуйста, попробуйте позже.';
     }
   } catch (err) {
-    console.error('Ошибка при загрузке данных статьи:', err);
     error.value = 'Произошла ошибка при загрузке статьи. Пожалуйста, попробуйте позже.';
   } finally {
     isLoading.value = false;

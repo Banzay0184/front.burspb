@@ -43,7 +43,6 @@ const fetchGlobalData = async () => {
       navItems.value = response.data.navigation.main;
     }
   } catch (error) {
-    console.error('Ошибка при получении данных навигации:', error);
   }
 };
 

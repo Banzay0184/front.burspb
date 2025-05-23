@@ -152,7 +152,6 @@ const submitOrder = async () => {
       throw new Error(data.message || 'Ошибка при оформлении заказа');
     }
   } catch (error) {
-    console.error('Ошибка при оформлении заказа:', error);
     errorMessage.value = error instanceof Error ? error.message : 'Ошибка при оформлении заказа';
   } finally {
     isLoading.value = false;

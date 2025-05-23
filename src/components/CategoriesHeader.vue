@@ -64,7 +64,6 @@ const fetchGlobalData = async () => {
       });
     }
   } catch (error) {
-    console.error('Ошибка при получении данных категорий:', error);
   }
 };
 

@@ -87,7 +87,6 @@ const fetchPosts = async (page = 1) => {
     }
   } catch (err) {
     error.value = 'Не удалось загрузить статьи. Пожалуйста, попробуйте позже.';
-    console.error('Ошибка при загрузке статей:', err);
     posts.value = [];
   } finally {
     isLoading.value = false;

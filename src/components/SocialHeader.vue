@@ -33,7 +33,6 @@ const fetchGlobalData = async () => {
       socialLinks.value = response.data.social;
     }
   } catch (error) {
-    console.error('Ошибка при получении данных социальных сетей:', error);
   }
 };
 

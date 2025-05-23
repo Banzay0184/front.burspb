@@ -9,7 +9,6 @@ import Popular from '../components/Popular.vue';
 import RecentPosts from '../components/RecentPosts.vue';
 import Cards from '../components/Cards.vue';
 import { CartService } from '../api/api';
-import apiService from '../api/api';
 import { getApiUrl } from '../api/api';
 
 // Состояние компонента для карточек товаров
@@ -82,7 +81,6 @@ const fetchPopularProducts = async () => {
     }
     
   } catch (err) {
-    console.error('Ошибка при получении данных продуктов:', err);
     error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
   } finally {
     isLoading.value = false;

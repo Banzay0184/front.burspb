@@ -35,7 +35,6 @@ const fetchPopularItems = async () => {
       hasError.value = true;
     }
   } catch (error) {
-    console.error('Ошибка при загрузке популярных категорий:', error);
     hasError.value = true;
   } finally {
     isLoading.value = false;

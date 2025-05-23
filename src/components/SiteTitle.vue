@@ -11,7 +11,6 @@ const fetchGlobalData = async () => {
       siteTitle.value = response.data.siteTitle;
     }
   } catch (error) {
-    console.error('Ошибка при получении заголовка сайта:', error);
   }
 };
 
