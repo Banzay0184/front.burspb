@@ -18,7 +18,7 @@ export const getApiUrl = (endpoint: string = '') => {
 
 // Функция для получения URL файлов (статические ресурсы)
 export const getFileUrl = (path: string) => {
-  const baseUrl = import.meta.env.DEV ? 'https://burspb.com' : '';
+  const baseUrl = import.meta.env.DEV ? 'https://ch32205.tw1.ru' : '';
   return `${baseUrl}/api/files/${path.replace(/^\//, '')}`;
 };
 
