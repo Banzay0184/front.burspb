@@ -2,13 +2,12 @@ import axios, { type AxiosInstance } from 'axios';
 
 // Конфигурация API URL в зависимости от окружения
 const getApiBaseUrl = () => {
-  // В режиме разработки используем прокси
   if (import.meta.env.DEV) {
-    return '/api/data/v1';
+    return 'https://ch32205.tw1.ru/data/v1';
   }
-  // В продакшене используем относительные пути
   return '/api/data/v1';
 };
+
 
 // Экспортируемая функция для получения API URL
 export const getApiUrl = (endpoint: string = '') => {
