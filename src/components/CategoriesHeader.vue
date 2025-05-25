@@ -47,7 +47,7 @@ const fetchGlobalData = async () => {
       
       // Преобразуем данные API в формат, ожидаемый компонентом
       categories.value = apiCategories.map((item: any) => ({
-        href: `/catalog/category-${item.slug}`,
+        href: `/catalog/selection-${item.slug}`,
         iconSrc: getIconPath(item.icon),
         iconAlt: `Перейти к ${item.title}`,
         title: item.title,

@@ -102,7 +102,7 @@ const fetchCategoryData = async () => {
     if (data.nested_categories && Array.isArray(data.nested_categories)) {
       nestedCategories.value = data.nested_categories.map((cat: any) => ({
         title: cat.title,
-        url: `/catalog/category-${cat.slug}`
+        url: `/catalog/selection-${cat.slug}`
       }));
     } else {
       nestedCategories.value = [];
@@ -188,10 +188,10 @@ const addToCart = (id: number) => {
 const handlePageChange = (page: number) => {
   if (page === 1) {
     // Для первой страницы переходим на базовый URL без суффикса /page/1
-    router.push(`/catalog/category-${categorySlug.value}`);
+    router.push(`/catalog/selection-${categorySlug.value}`);
   } else {
     // Для остальных страниц добавляем нужный суффикс
-    router.push(`/catalog/category-${categorySlug.value}/page/${page}`);
+    router.push(`/catalog/selection-${categorySlug.value}/page/${page}`);
   }
 };
 
@@ -263,7 +263,7 @@ watch(
             v-if="totalPages > 1"
             :current-page="currentPage"
             :total-pages="totalPages"
-            :base-url="`/catalog/category-${categorySlug}`"
+            :base-url="`/catalog/selection-${categorySlug}`"
             @page-change="handlePageChange"
           />
         </section>

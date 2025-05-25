@@ -65,7 +65,7 @@ const submitSearch = () => {
     } else {
       // Иначе переходим на страницу поиска с передачей запроса
       closeSearch();
-      router.push(`/search/?s=${encodeURIComponent(searchQuery.value)}`);
+      router.push(`/search?search=${encodeURIComponent(searchQuery.value)}`);
     }
   }
 };

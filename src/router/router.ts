@@ -85,12 +85,12 @@ const routes = [
     component: ApiTest,
   },
   {
-    path: '/catalog/category-:slug',
+    path: '/catalog/selection-:slug',
     name: 'CategoryDetail',
     component: CategoryBurovyeDolota,
   },
   {
-    path: '/catalog/category-:slug/page/:page',
+    path: '/catalog/selection-:slug/page/:page',
     name: 'CategoryDetailPagination',
     component: CategoryBurovyeDolota,
   },

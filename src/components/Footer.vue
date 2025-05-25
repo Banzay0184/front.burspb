@@ -83,11 +83,11 @@ onMounted(() => {
 
 const getCategoryPath = (category: any) => {
   if (category.type === 'taxonomy') {
-    return `/catalog/category-${category.slug}`;
+    return `/catalog/selection-${category.slug}`;
   } else if (category.type === 'post_type') {
     return `/catalog/${category.slug}`;
   }
-  return `/catalog/category-${category.slug}`;
+  return `/catalog/selection-${category.slug}`;
 };
 
 const getPagePath = (item: any) => {

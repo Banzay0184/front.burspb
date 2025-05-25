@@ -8,7 +8,7 @@ import { getApiUrl, getFileUrl } from '../../api/api';
 
 // Получаем данные из URL
 const route = useRoute();
-const searchQuery = computed(() => route.query.q?.toString() || '');
+const searchQuery = computed(() => route.query.search?.toString() || '');
 
 // Состояние поиска
 const isLoading = ref(false);
@@ -50,32 +50,26 @@ const performSearch = async () => {
   articleResults.value = [];
   
   try {
-    // Добавляем результаты для запроса "Буровые долота"
-    const searchTerms = searchQuery.value.toLowerCase().split(' ');
-    if (searchTerms.includes('буровые') || searchTerms.includes('долота') || searchTerms.includes('буровое')) {
-      // Добавляем товары, связанные с буровыми долотами
-      addBurovyeDolotaProducts();
-    } else if (searchTerms.includes('оборудование')) {
-      // Добавляем товары, связанные с оборудованием
-      addEquipmentProducts();
-    } else if (searchTerms.includes('насос') || searchTerms.includes('насосы')) {
-      // Добавляем товары, связанные с насосами
-      addPumpProducts();
-    } else {
-      // Пробуем искать через API на всякий случай
-      await searchViaAPI();
-      
-      // Если API не вернул результатов, добавляем основные товары
-      if (!hasResults.value) {
-        addDefaultProducts();
-      }
+    const response = await fetch(getApiUrl(`search?search=${encodeURIComponent(searchQuery.value)}`));
+    
+    if (!response.ok) {
+      throw new Error(`Ошибка при поиске: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Обрабатываем товары из products.posts
+    if (data.products?.posts && Array.isArray(data.products.posts)) {
+      productResults.value = data.products.posts.map(formatProduct);
+    }
+    
+    // Обрабатываем статьи из recent.content.posts
+    if (data.recent?.content?.posts && Array.isArray(data.recent.content.posts)) {
+      articleResults.value = data.recent.content.posts.map(formatArticle);
     }
     
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Ошибка при выполнении поиска';
-    
-    // Даже при ошибке, показываем какие-то результаты
-    addDefaultProducts();
   } finally {
     isLoading.value = false;
   }
@@ -107,13 +101,13 @@ const addBurovyeDolotaProducts = () => {
   categoryResults.value.push({
     id: 100,
     title: 'Буровые долота',
-    url: '/catalog/category-burovye-dolota'
+    url: '/catalog/selection-burovye-dolota'
   });
   
   categoryResults.value.push({
     id: 101,
     title: 'Породоразрушающие буровые инструменты',
-    url: '/catalog/category-porodorazrushayushie-burovye-instrumenty'
+    url: '/catalog/selection-porodorazrushayushie-burovye-instrumenty'
   });
 };
 
@@ -143,13 +137,13 @@ const addEquipmentProducts = () => {
   categoryResults.value.push({
     id: 102,
     title: 'Буровое оборудование',
-    url: '/catalog/category-burovoe-oborudovanie'
+    url: '/catalog/selection-burovoe-oborudovanie'
   });
   
   categoryResults.value.push({
     id: 103,
     title: 'Насосное оборудование',
-    url: '/catalog/category-nasosnoe-oborudovanie'
+    url: '/catalog/selection-nasosnoe-oborudovanie'
   });
 };
 
@@ -179,7 +173,7 @@ const addPumpProducts = () => {
   categoryResults.value.push({
     id: 104,
     title: 'Насосное оборудование',
-    url: '/catalog/category-nasosnoe-oborudovanie'
+    url: '/catalog/selection-nasosnoe-oborudovanie'
   });
 };
 
@@ -228,49 +222,14 @@ const addDefaultProducts = () => {
   categoryResults.value.push({
     id: 105,
     title: 'Буровое оборудование',
-    url: '/catalog/category-burovoe-oborudovanie'
+    url: '/catalog/selection-burovoe-oborudovanie'
   });
   
   categoryResults.value.push({
     id: 106,
     title: 'Насосное оборудование',
-    url: '/catalog/category-nasosnoe-oborudovanie'
+    url: '/catalog/selection-nasosnoe-oborudovanie'
   });
-};
-
-// Поиск через API
-const searchViaAPI = async () => {
-  try {
-    const response = await fetch(getApiUrl(`search?query=${encodeURIComponent(searchQuery.value)}`));
-    
-    if (!response.ok) {
-      throw new Error(`Ошибка при поиске через API: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Проверяем, есть ли в ответе массив 'posts'
-    if (data && data.posts && Array.isArray(data.posts) && data.posts.length > 0) {
-      data.posts.forEach((post: any) => {
-        if (post) {
-          // Проверяем, является ли пост товаром
-          if (post.meta && post.meta.artikul) {
-            productResults.value.push(formatProduct(post));
-          } else if (post.slug && post.slug.includes('product')) {
-            productResults.value.push(formatProduct(post));
-          } else if (post.date) {
-            articleResults.value.push(formatArticle(post));
-          } else {
-            // Если не можем определить тип, считаем что это товар
-            productResults.value.push(formatProduct(post));
-          }
-        }
-      });
-    }
-    
-  } catch (err) {
-    // Не выбрасываем ошибку дальше, так как этот метод вызывается только как запасной вариант
-  }
 };
 
 // Функции форматирования результатов
@@ -279,19 +238,17 @@ const formatProduct = (product: any): any => {
     id: product.id || Math.random() * 100000,
     title: product.title || 'Без названия',
     link: product.link || `/catalog/product-${product.slug || ''}`,
-    image: product.img?.webp_square_350 || product.img?.square_350 || product.image || '',
+    image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
     alt: product.img?.alt?.description || product.title || 'Товар',
     available: product.meta?.availability !== false,
-    articul: product.meta?.artikul || product.articul || '',
+    articul: product.meta?.artikul || '',
     oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-    currentPrice: product.meta?.price ? `${product.meta.price} ₽` : product.price || '0 ₽',
+    currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
     showOldPrice: !!product.meta?.price_old,
     slug: product.slug || '',
-    weight: product.meta?.weight ? `${product.meta.weight} кг` : product.weight || ''
+    weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
   };
 };
-
-// Форматирование категорий осуществляется напрямую в коде выше
 
 const formatArticle = (article: any): any => {
   return {
@@ -299,7 +256,7 @@ const formatArticle = (article: any): any => {
     title: article.title || 'Без названия',
     url: article.url || `/statji/${article.slug || ''}`,
     date: article.date || '',
-    image: article.img?.webp_square_350 || article.img?.square_350 || article.image || '',
+    image: article.img?.webp_square_350 || article.img?.square_350 || article.img?.webp_full || article.img?.full || '',
     excerpt: article.excerpt || ''
   };
 };
@@ -335,7 +292,7 @@ onMounted(() => {
 });
 
 // Следим за изменением параметра запроса
-watch(() => route.query.q, (newQuery) => {
+watch(() => route.query.search, (newQuery) => {
   if (newQuery) {
     performSearch();
   } else {

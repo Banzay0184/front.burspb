@@ -17,7 +17,10 @@ interface CategoryItem {
   params: {
     title: string | null
     is_h1: string | null
-    is_link: any
+    is_link: {
+      url: string
+      title: string
+    }
   }
 }
 
@@ -31,6 +34,10 @@ interface TransformedCategory {
   subcategories?: {
     title: string
     href: string
+    is_link: {
+      url: string
+      title: string
+    }
   }[]
 }
 
@@ -66,11 +73,11 @@ const getIconPath = (iconClass: string | null) => {
 // Функция для формирования URL категории
 const getCategoryPath = (category: CategoryItem) => {
   if (category.type === 'taxonomy') {
-    return `/catalog/category-${category.slug}`
+    return `/catalog/selection-${category.slug}`
   } else if (category.type === 'post_type') {
     return `/catalog/${category.slug}`
   }
-  return `/catalog/category-${category.slug}`
+  return `/catalog/selection-${category.slug}`
 }
 
 // Функция для преобразования массива категорий в древовидную структуру
@@ -104,7 +111,8 @@ const transformCategories = (categoriesData: CategoryItem[]) => {
         if (result[parentIndex].subcategories) {
           result[parentIndex].subcategories!.push({
             title: category.title,
-            href: getCategoryPath(category)
+            href: getCategoryPath(category),
+            is_link: category.params.is_link
           })
         }
       }
@@ -175,7 +183,7 @@ onMounted(() => {
             itemtype="http://schema.org/ItemList"
           >
             <a :href="subcategory.href" itemprop="url" class="">
-              {{ subcategory.title }}
+              {{ subcategory.title}}
             </a>
             <meta itemprop="name" content="Учебные статьи" />
           </li>

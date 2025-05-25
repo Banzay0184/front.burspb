@@ -11,7 +11,7 @@ const submitSearch = () => {
     // Переходим на страницу поиска с передачей запроса
     router.push({
       path: '/search',
-      query: { q: searchQuery.value.trim() }
+      query: { search: searchQuery.value.trim() }
     });
   }
 };
