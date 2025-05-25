@@ -6,7 +6,7 @@ interface BreadcrumbItem {
   isCurrent?: boolean;
 }
 
-const props = defineProps<{
+defineProps<{
   items?: BreadcrumbItem[];
 }>();
 
