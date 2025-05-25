@@ -19,18 +19,13 @@ const props = withDefaults(defineProps<PaginationProps>(), {
 
 const emit = defineEmits(['page-change']);
 
-const currentPageNumber = ref(Number(props.currentPage));
-
-watch(() => props.currentPage, (newValue) => {
-  currentPageNumber.value = Number(newValue);
-});
-
+// Убираем локальное состояние, используем напрямую props
 const pages = computed(() => {
   const result = [];
   const totalPages = Math.max(1, props.totalPages);
   
   // Всегда показываем первую страницу, последнюю и несколько вокруг текущей
-  const current = currentPageNumber.value;
+  const current = props.currentPage;
   const delta = 1; // Количество страниц до и после текущей
   
   for (let i = 1; i <= totalPages; i++) {
@@ -49,34 +44,32 @@ const pages = computed(() => {
     }
   }
   
-  // Удаляем дубликаты (например, если current = 2, то не нужен разделитель после 1)
+  // Удаляем дубликаты
   return result.filter((item, index, self) => 
     self.indexOf(item) === index
   );
 });
 
 const hasNextPage = computed(() => {
-  return currentPageNumber.value < props.totalPages;
+  return props.currentPage < props.totalPages;
 });
 
 const hasPrevPage = computed(() => {
-  return currentPageNumber.value > 1;
+  return props.currentPage > 1;
 });
 
 const nextPage = computed(() => {
-  return Math.min(currentPageNumber.value + 1, props.totalPages);
+  return Math.min(props.currentPage + 1, props.totalPages);
 });
 
 const prevPage = computed(() => {
-  return Math.max(currentPageNumber.value - 1, 1);
+  return Math.max(props.currentPage - 1, 1);
 });
 
 const handlePageChange = (page: number) => {
   const pageNum = Number(page);
-  const currentNum = Number(currentPageNumber.value);
   
-  if (pageNum !== currentNum && pageNum >= 1 && pageNum <= props.totalPages) {
-    currentPageNumber.value = pageNum;
+  if (pageNum !== props.currentPage && pageNum >= 1 && pageNum <= props.totalPages) {
     emit('page-change', pageNum);
   }
 };
@@ -88,13 +81,7 @@ const getPageUrl = (page: number) => {
 
 
 <template>
-  <nav v-if="totalPages > 1">
-    <!-- Debug info, remove in production -->
-    <!-- <div style="display: none;">
-      currentPageNumber: {{ currentPageNumber }} ({{ typeof currentPageNumber }})
-      props.currentPage: {{ props.currentPage }} ({{ typeof props.currentPage }})
-    </div> -->
-    
+  <nav v-if="totalPages > 1">  
     <ul class="pagination">
       <li :class="`pagination__item pagination__item--prev ${!hasPrevPage ? 'pagination__item--prev--inactive' : ''}`">
         <a v-if="hasPrevPage" :href="getPageUrl(prevPage)" @click.prevent="handlePageChange(prevPage)" tabindex="0">
@@ -107,7 +94,7 @@ const getPageUrl = (page: number) => {
       
       <template v-for="(page, index) in pages" :key="index">
         <li v-if="page !== '...'" class="pagination__item">
-          <span v-if="Number(page) === Number(currentPageNumber)" class="pagination__item__active">
+          <span v-if="Number(page) === Number(currentPage)" class="pagination__item__active">
             <strong>{{ page }}</strong>
           </span>
           <a 

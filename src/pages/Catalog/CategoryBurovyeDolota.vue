@@ -12,8 +12,10 @@ import { getApiUrl } from '../../api/api';
 // Получение параметров маршрута
 const route = useRoute();
 const router = useRouter();
-const categorySlug = computed(() => route.params.slug?.toString() || 'burovye-dolota');
-const pageFromRoute = computed(() => {
+const categorySlug = computed(() => route.params.slug?.toString() || '');
+
+// Текущая страница
+const currentPage = computed(() => {
   const page = route.params.page;
   return page ? parseInt(page.toString(), 10) : 1;
 });
@@ -25,9 +27,7 @@ const categoryData = ref<any>(null);
 const nestedCategories = ref<Array<{ title: string, url: string }>>([]);
 const cardsList = ref<Array<any>>([]);
 const categoryTitle = ref('Товары каталога');
-const currentPage = ref(pageFromRoute.value);
 const totalPages = ref(1);
-
 
 // Параметры фильтрации и сортировки
 const sortParam = ref('price-asc');
@@ -42,18 +42,26 @@ const seoContent = computed(() => categoryData.value?.category?.seo?.description
 const breadcrumbs = computed(() => {
   const crumbs = [];
   
-  // Добавить Каталог
-  crumbs.push({
-    title: 'Каталог',
-    url: '/Catalog/CatalogPage'
-  });
-  
-  // Добавить текущую категорию
+  // Добавляем данные из breadcrumbs API, если они есть
+  if (categoryData.value?.breadcrumbs && Array.isArray(categoryData.value.breadcrumbs)) {
+    crumbs.push(...categoryData.value.breadcrumbs);
+  }
+
+  // Добавляем текущую категорию, если она не включена в breadcrumbs
   if (categoryData.value?.category?.title) {
-    crumbs.push({
+    const currentCategory = {
       title: categoryData.value.category.title,
-      url: ''  // Текущая страница, без URL
-    });
+      slug: categorySlug.value
+    };
+
+    // Проверяем, нет ли уже такой категории в крошках
+    const isDuplicate = crumbs.some(crumb => 
+      crumb.title === currentCategory.title && crumb.slug === currentCategory.slug
+    );
+
+    if (!isDuplicate) {
+      crumbs.push(currentCategory);
+    }
   }
   
   return crumbs;
@@ -61,21 +69,16 @@ const breadcrumbs = computed(() => {
 
 // Загрузка данных категории
 const fetchCategoryData = async () => {
-  // Защита от повторных запросов
-  if (isLoading.value) {
-    return;
-  }
+  if (isLoading.value) return;
   
   isLoading.value = true;
   error.value = null;
   
   try {
-    // Добавляем параметры сортировки и фильтрации в URL запроса
     const params = new URLSearchParams();
     params.append('page', currentPage.value.toString());
     params.append('sort', sortParam.value);
     
-    // Добавляем фильтры цены, если они заданы
     if (minPrice.value) {
       params.append('min_price', minPrice.value);
     }
@@ -86,6 +89,7 @@ const fetchCategoryData = async () => {
     const apiUrl = getApiUrl(`category/slug/${categorySlug.value}?${params.toString()}`);
     
     const response = await fetch(apiUrl);
+    
     if (!response.ok) {
       throw new Error(`Ошибка при загрузке данных: ${response.status}`);
     }
@@ -93,12 +97,10 @@ const fetchCategoryData = async () => {
     const data = await response.json();
     categoryData.value = data;
     
-    // Установка названия категории
-    if (data.category && data.category.title) {
+    if (data.category?.title) {
       categoryTitle.value = data.category.title;
     }
     
-    // Обработка вложенных категорий
     if (data.nested_categories && Array.isArray(data.nested_categories)) {
       nestedCategories.value = data.nested_categories.map((cat: any) => ({
         title: cat.title,
@@ -108,7 +110,6 @@ const fetchCategoryData = async () => {
       nestedCategories.value = [];
     }
     
-    // Обработка товаров
     if (data.posts && Array.isArray(data.posts)) {
       cardsList.value = data.posts.map((product: any) => ({
         id: product.id,
@@ -128,9 +129,9 @@ const fetchCategoryData = async () => {
       cardsList.value = [];
     }
     
-    // Пагинация
     if (data.pagination) {
       totalPages.value = Number(data.pagination.pages_total) || 1;
+      // НЕ обновляем currentPage из API, так как он уже установлен из URL
     }
     
   } catch (err) {
@@ -145,7 +146,6 @@ const fetchCategoryData = async () => {
 // Обработчик изменения сортировки
 const handleSortChange = (value: string) => {
   sortParam.value = value;
-  currentPage.value = 1; // Сбрасываем на первую страницу
   // Временно отключено для отладки
   // fetchCategoryData();
 };
@@ -154,7 +154,6 @@ const handleSortChange = (value: string) => {
 const handlePriceFilterChange = (min: string | null, max: string | null) => {
   minPrice.value = min;
   maxPrice.value = max;
-  currentPage.value = 1; // Сбрасываем на первую страницу
   // Временно отключено для отладки
   // fetchCategoryData();
 };
@@ -187,10 +186,8 @@ const addToCart = (id: number) => {
 // Обработка изменения страницы
 const handlePageChange = (page: number) => {
   if (page === 1) {
-    // Для первой страницы переходим на базовый URL без суффикса /page/1
     router.push(`/catalog/selection-${categorySlug.value}`);
   } else {
-    // Для остальных страниц добавляем нужный суффикс
     router.push(`/catalog/selection-${categorySlug.value}/page/${page}`);
   }
 };
@@ -199,16 +196,16 @@ const handlePageChange = (page: number) => {
 watch(
   [() => route.params.slug, () => route.params.page],
   ([newSlug, newPage], [oldSlug, oldPage]) => {
-    // Загружаем данные при первой загрузке или при реальном изменении параметров
+    
+    // Загружаем данные при изменении параметров
     if (!oldSlug || newSlug !== oldSlug || newPage !== oldPage) {
-      currentPage.value = pageFromRoute.value;
       fetchCategoryData();
-      if (oldSlug) { // Прокручиваем только при изменении, не при первой загрузке
+      if (oldSlug) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   },
-  { immediate: true } // Выполняем при первой загрузке
+  { immediate: true }
 );
 </script>
 
@@ -259,8 +256,8 @@ watch(
                 @add-to-cart="addToCart"
             />
 
-          <Pagination 
-            v-if="totalPages > 1"
+          <Pagination
+            v-if="totalPages > 1 && currentPage"
             :current-page="currentPage"
             :total-pages="totalPages"
             :base-url="`/catalog/selection-${categorySlug}`"
@@ -277,6 +274,7 @@ watch(
         <section v-if="seoContent" class="section oes">
           <div class="content" v-html="seoContent"></div>
         </section>
+
       </template>
     </div>
 </main>

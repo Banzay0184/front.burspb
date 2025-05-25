@@ -2,66 +2,130 @@
 interface BreadcrumbItem {
   title: string;
   url?: string;
+  slug?: string;
+  isCurrent?: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
   items?: BreadcrumbItem[];
 }>();
+
+const getBreadcrumbUrl = (item: BreadcrumbItem) => {
+  if (item.isCurrent) return '';
+  return item.url || (item.slug ? `/catalog/selection-${item.slug}` : '');
+};
 </script>
 
 <template>
-<nav class="breadcrumbs">
-  <ul itemtype="http://schema.org/BreadcrumbList">
-      <li itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a href="/" class="nuxt-link-active">Главная</a> <meta itemprop="position" content="1" /></li>
+  <nav class="breadcrumbs" aria-label="Навигация по сайту">
+    <ul itemscope itemtype="http://schema.org/BreadcrumbList">
+      <!-- Главная -->
+      <li 
+        itemprop="itemListElement" 
+        itemscope 
+        itemtype="http://schema.org/ListItem"
+      >
+        <a 
+          href="/" 
+          itemprop="item"
+          class="nuxt-link-active"
+        >
+          <span itemprop="name">Главная</span>
+        </a>
+        <meta itemprop="position" content="1" />
+      </li>
+
+      <!-- Каталог -->
+      <li 
+        itemprop="itemListElement" 
+        itemscope 
+        itemtype="http://schema.org/ListItem"
+      >
+        <a 
+          href="/catalog/CatalogPage" 
+          itemprop="item"
+        >
+          <span itemprop="name">Каталог</span>
+        </a>
+        <meta itemprop="position" content="2" />
+      </li>
       
-      <!-- Динамические хлебные крошки -->
+      <!-- Динамические элементы -->
       <template v-if="items && items.length > 0">
         <li 
           v-for="(item, index) in items" 
-          :key="index" 
+          :key="index"
           itemprop="itemListElement" 
+          itemscope 
           itemtype="http://schema.org/ListItem"
+          :class="{ 'current': item.isCurrent }"
         >
-          <a v-if="item.url" :href="item.url" itemprop="item">{{ item.title }}</a>
-          <span v-else>{{ item.title }}</span>
-          <meta itemprop="position" :content="String(index + 2)" />
+          <template v-if="getBreadcrumbUrl(item)">
+            <a 
+              :href="getBreadcrumbUrl(item)" 
+              itemprop="item"
+            >
+              <span itemprop="name">{{ item.title }}</span>
+            </a>
+          </template>
+          <template v-else>
+            <span itemprop="name">{{ item.title }}</span>
+          </template>
+          <meta itemprop="position" :content="String(index + 3)" />
         </li>
       </template>
-      
-      <!-- Дефолтная крошка для каталога, если нет других -->
-      <li v-else itemprop="itemListElement" itemtype="http://schema.org/ListItem">
-        <a itemprop="item">Каталог</a>
-        <meta itemprop="position" content="2" />
-      </li>
-  </ul>
-</nav>
+    </ul>
+  </nav>
 </template>
 
 <style lang="scss" scoped>
 .breadcrumbs {
-  width:100%;
-  margin-bottom:1.5rem;
-  line-height:1
-}
-@media screen and (min-width:768px) {
-  .breadcrumbs {
-    margin-bottom:4.5rem
+  width: 100%;
+  margin-bottom: 1.5rem;
+  line-height: 1;
+  
+  @media screen and (min-width: 768px) {
+    margin-bottom: 4.5rem;
   }
-}
-.breadcrumbs ul li {
-  display:inline-block;
-  margin-right:.45rem
-}
-.breadcrumbs ul li:after {
-  content:"→";
-  margin-left:.75rem
-}
-.breadcrumbs ul li:last-child {
-  margin-right:0;
-  font-weight:600
-}
-.breadcrumbs ul li:last-child:after {
-  margin-left:0;
-  content:""
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    
+    li {
+      display: inline-flex;
+      align-items: center;
+      color: #333;
+      
+      &:after {
+        content: "→";
+        margin-left: 0.75rem;
+        color: #666;
+      }
+      
+      &:last-child {
+        font-weight: 600;
+        
+        &:after {
+          content: none;
+        }
+      }
+
+      &.current {
+        font-weight: 600;
+        color: var(--primary-color, #050506);
+      }
+      
+      a {
+        color: inherit;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
 }
 </style>

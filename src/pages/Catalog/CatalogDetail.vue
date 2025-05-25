@@ -72,12 +72,27 @@ const fetchProductData = async () => {
     if (data.breadcrumbs && Array.isArray(data.breadcrumbs)) {
       breadcrumbs.value = data.breadcrumbs.map((item: any) => ({
         title: item.title,
-        url: item.url || ''
+        slug: item.slug || '',
+        url: item.slug ? `/catalog/selection-${item.slug}` : null
       }));
+
+      // Добавляем текущий продукт в конец хлебных крошек
+      breadcrumbs.value.push({
+        title: productData.value.title,
+        url: '',  // Текущая страница не является ссылкой
+        isCurrent: true
+      });
     } else {
       breadcrumbs.value = [
-        { title: 'Каталог', url: '/Catalog/CatalogPage' },
-        { title: productData.value.title, url: '' }
+        { 
+          title: 'Каталог',
+          url: '/catalog/CatalogPage'
+        },
+        { 
+          title: productData.value.title,
+          url: '',
+          isCurrent: true
+        }
       ];
     }
     
