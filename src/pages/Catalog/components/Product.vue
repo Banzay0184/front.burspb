@@ -12,6 +12,7 @@ interface ProductProps {
   price: string;
   currency: string;
   availability: boolean;
+  isOrderable?: boolean;
   sku: string;
   weight: string;
   delivery: {
@@ -116,7 +117,8 @@ const addToCart = () => {
       articul: props.productData.sku,
       quantity: 1,
       slug: props.productData.slug,
-      available: props.productData.availability,
+      available: true,
+      isOrderable: props.productData.isOrderable || false,
       weight: props.productData.weight
     });
   }
@@ -171,10 +173,15 @@ onUnmounted(() => {
                             </span>
                             <link itemprop="availability" href="https://schema.org/InStock" />
                         </div>
-                        <div class="product__meta__availability" :class="{ available: productData.availability }">
-                            <i class="fa fa-check"></i>
+                        <div class="product__meta__availability" 
+                             :class="{ 
+                               'available': productData.availability && !productData.isOrderable,
+                               'orderable': productData.isOrderable 
+                             }"
+                        >
+                            <i class="fa" :class="productData.isOrderable ? 'fa-clock-o' : 'fa-check'"></i>
                             <span>
-                                {{ productData.availability ? 'Есть в наличии' : 'Нет в наличии' }}
+                                {{ productData.isOrderable ? 'Под заказ' : 'Есть в наличии' }}
                             </span>
                         </div>
                         <div class="product__meta__artikul">
@@ -290,5 +297,21 @@ onUnmounted(() => {
 
 .basket__qty__action--minus.inactive:hover {
   background: #006079
+}
+
+.product__meta__availability.orderable {
+  color: #006079;
+}
+
+.product__meta__availability.orderable i {
+  color: rgb(255, 255, 255);
+}
+
+.product__meta__price__current__note {
+    display: block;
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: #aaa;
+    padding-top: 1.5rem;
 }
 </style>

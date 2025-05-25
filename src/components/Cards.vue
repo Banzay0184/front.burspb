@@ -9,6 +9,7 @@ interface Card {
   image: string
   alt: string
   available: boolean
+  isOrderable?: boolean
   articul: string
   oldPrice: string
   currentPrice: string
@@ -129,10 +130,13 @@ onUnmounted(() => {
             <div class="card__meta__row" style="align-items: center;">
               <div 
                 class="card__meta__availability" 
-                :class="{ 'available': card.available, 'unavailable': !card.available }"
+                :class="{
+                  'available': card.available && !card.isOrderable,
+                  'orderable': card.isOrderable
+                }"
               >
-                <i class="fa" :class="card.available ? 'fa-check' : 'fa-times'"></i> 
-                <span>{{ card.available ? 'Есть в наличии' : 'Нет в наличии' }}</span>
+                <i class="fa" :class="card.isOrderable ? 'fa-clock-o' : 'fa-check'"></i> 
+                <span>{{ card.isOrderable ? 'Под заказ' : 'Есть в наличии' }}</span>
               </div>
               <div class="card__meta__artikul">
                 <span class="card__meta__artikul__title">Артикул:</span> 
@@ -157,12 +161,10 @@ onUnmounted(() => {
             </div>
             <div>
               <span class="button-wrapper">
-                <!-- Показываем разные кнопки в зависимости от того, есть ли товар в корзине -->
                 <button 
                   v-if="!isInCart(card.id)"
                   @click="addToCart(card)" 
                   class="button button--blue button--basket"
-                  :disabled="!card.available"
                 >
                   В корзину
                 </button>
@@ -250,5 +252,13 @@ onUnmounted(() => {
 
 .basket__qty__action--minus.inactive:hover {
   background: #006079
+}
+
+.card__meta__availability.orderable {
+  color: #006079;
+}
+
+.card__meta__availability.orderable i {
+  color: rgb(255, 255, 255)
 }
 </style>

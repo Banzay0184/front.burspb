@@ -478,6 +478,7 @@ interface CartItem {
   quantity: number;
   slug: string;
   available: boolean;
+  isOrderable: boolean; // Флаг для товаров "Под заказ"
   weight?: string; // Вес товара (опциональное поле)
 }
 

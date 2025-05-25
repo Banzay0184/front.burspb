@@ -117,7 +117,8 @@ const fetchCategoryData = async () => {
         link: `/catalog/product-${product.slug}`,
         image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
         alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        available: product.meta?.availability !== false,
+        available: true,
+        isOrderable: !product.meta?.availability,
         articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
@@ -161,7 +162,7 @@ const handlePriceFilterChange = (min: string | null, max: string | null) => {
 // Обработка добавления в корзину
 const addToCart = (id: number) => {
   const product = cardsList.value.find(item => item.id === id);
-  if (product && product.available) {
+  if (product) {
     // Если товар уже в корзине, увеличиваем количество
     if (CartService.isInCart(id)) {
       const currentQuantity = CartService.getItemQuantity(id);
@@ -176,7 +177,8 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        available: product.available,
+        available: true,
+        isOrderable: product.isOrderable || false,
         weight: product.weight
       });
     }
@@ -256,7 +258,7 @@ watch(
                 @add-to-cart="addToCart"
             />
 
-          <Pagination
+          <Pagination 
             v-if="totalPages > 1 && currentPage"
             :current-page="currentPage"
             :total-pages="totalPages"
