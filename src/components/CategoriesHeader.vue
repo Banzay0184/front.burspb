@@ -13,6 +13,7 @@ interface CategoryItem {
 
 const categories = ref<CategoryItem[]>([]);
 const cartItemsCount = ref(0);
+const cartTotalPrice = ref(0);
 
 const getIconPath = (iconClass: string) => {
   // Карта соответствия классов иконок и путей к изображениям
@@ -37,6 +38,8 @@ const getIconPath = (iconClass: string) => {
 
 const updateCartCount = () => {
   cartItemsCount.value = CartService.getCartItemsCount();
+  // Добавляем расчет общей суммы
+  cartTotalPrice.value = CartService.getCartTotal();
 };
 
 const fetchGlobalData = async () => {
@@ -47,7 +50,7 @@ const fetchGlobalData = async () => {
       
       // Преобразуем данные API в формат, ожидаемый компонентом
       categories.value = apiCategories.map((item: any) => ({
-        href: `/catalog/selection-${item.slug}`,
+        href: `/catalog/category-${item.slug}`,
         iconSrc: getIconPath(item.icon),
         iconAlt: `Перейти к ${item.title}`,
         title: item.title,
@@ -99,6 +102,7 @@ onUnmounted(() => {
           <a 
             :href="href" 
             @click="navigate"
+            class="categories__item__link"
           >
             <span 
               :class="{
@@ -124,6 +128,14 @@ onUnmounted(() => {
             </span>
              
             <span class="categories__item__title">{{ item.title }}</span>
+            
+            <!-- Показ общей суммы корзины -->
+            <span 
+              v-if="item.isBasket && cartTotalPrice > 0" 
+              class="categories__item__basket__total"
+            >
+              {{ cartTotalPrice.toLocaleString('ru-RU') }} ₽
+            </span>
           </a>
         </RouterLink>
       </li>
@@ -150,5 +162,20 @@ onUnmounted(() => {
 
 .categories__item__basket {
   position: relative;
+}
+
+.categories__item__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.categories__item__basket__total {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2C2C2C;
 }
 </style>

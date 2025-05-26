@@ -28,7 +28,7 @@ const fetchPopularItems = async () => {
         title: item.title || '',
         description: item.description || undefined,
         imageUrl: item.image?.webp_full || item.image?.full || '',
-        link: item.url?.slug ? `/catalog/selection-${item.url.slug}` : `/catalog/CatalogPage`
+        link: item.url?.slug ? `/catalog/selection-${item.url.slug}` : '/catalog'
       }));
       
     } else {

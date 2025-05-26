@@ -183,7 +183,7 @@ onMounted(() => {
             itemtype="http://schema.org/ItemList"
           >
             <a :href="subcategory.href" itemprop="url" class="">
-              {{ subcategory.title}}
+              {{ subcategory.is_link?.title || subcategory.title }}
             </a>
             <meta itemprop="name" content="Учебные статьи" />
           </li>

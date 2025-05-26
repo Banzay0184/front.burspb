@@ -8,6 +8,7 @@ import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
 import Cards from '../../components/Cards.vue';
 import { CartService } from '../../api/api';
 import { getApiUrl } from '../../api/api';
+import type { Post } from '../../api/api';
 
 // Получение параметров маршрута
 const route = useRoute();
@@ -23,8 +24,17 @@ const currentPage = computed(() => {
 // Состояние для данных категории
 const isLoading = ref(false);
 const error = ref<string | null>(null);
-const categoryData = ref<any>(null);
-const nestedCategories = ref<Array<{ title: string, url: string }>>([]);
+const categoryData = ref<CategoryData | null>(null);
+const nestedCategories = ref<Array<{
+  nav_id: number;
+  title: string;
+  url: string;
+  params: {
+    is_link?: {
+      title: string;
+    };
+  };
+}>>([]);
 const cardsList = ref<Array<any>>([]);
 const categoryTitle = ref('Товары каталога');
 const totalPages = ref(1);
@@ -38,34 +48,116 @@ const maxPrice = ref<string | null>(null);
 const hasProducts = computed(() => cardsList.value.length > 0);
 const seoContent = computed(() => categoryData.value?.category?.seo?.description || '');
 
+// Добавляем кэш для хранения данных родительской категории
+// Определение типа URL (selection или category)
+const getUrlPrefix = () => {
+  // Проверяем тип в первой вложенной категории
+  const firstNestedCategory = categoryData.value?.nested_categories?.[0];
+  const isTaxonomy = firstNestedCategory?.type === 'taxonomy';
+  return isTaxonomy ? 'category' : 'selection';
+};
+
+interface CategoryBreadcrumb {
+  title: string;
+  slug: string;
+  type?: string;
+  isCurrent?: boolean;
+}
+
+interface CategoryData {
+  breadcrumbs: CategoryBreadcrumb[];
+  nested_categories: Array<{
+    nav_id: number;
+    object_id: string;
+    type: string;
+    parent: string;
+    icon: string | null;
+    title: string;
+    slug: string;
+    params?: {
+      is_link?: {
+        title: string;
+      };
+    };
+  }>;
+  category: {
+    id: number;
+    title: string;
+    icon: string | null;
+    type?: string;
+    seo: {
+      description?: string;
+    };
+  };
+  pagination: {
+    posts_per_page: number;
+    current: string;
+    previous: number | null;
+    next: number | null;
+    pages_total: number;
+  };
+  posts: Post[];
+}
+
+// Функция для получения размера из слага
+const getSizeFromSlug = (slug: string) => {
+  const withoutPrefix = slug.replace(/^(selection-|category-)/, '');
+  const match = withoutPrefix.match(/-(\d+)-mm$/);
+  return match ? `${match[1]} мм` : '';
+};
+
+// Функция для проверки, является ли слаг подкатегорией с размером
+const isSizeSubcategory = (slug: string) => {
+  const withoutPrefix = slug.replace(/^(selection-|category-)/, '');
+  const sizePattern = /-\d+-mm$/;
+  return sizePattern.test(withoutPrefix);
+};
+
 // Формирование хлебных крошек
 const breadcrumbs = computed(() => {
-  const crumbs = [];
-  
-  // Добавляем данные из breadcrumbs API, если они есть
+  const crumbs: CategoryBreadcrumb[] = [];
+
+  // Добавляем данные из breadcrumbs API
   if (categoryData.value?.breadcrumbs && Array.isArray(categoryData.value.breadcrumbs)) {
-    crumbs.push(...categoryData.value.breadcrumbs);
+    crumbs.push(...categoryData.value.breadcrumbs.map((crumb: CategoryBreadcrumb) => {
+      const type = crumb.type || 'taxonomy';
+      return {
+        ...crumb,
+        type,
+        slug: crumb.slug
+      };
+    }));
   }
 
-  // Добавляем текущую категорию, если она не включена в breadcrumbs
-  if (categoryData.value?.category?.title) {
-    const currentCategory = {
+  // Проверяем, является ли текущая категория подкатегорией с размером
+  const currentSlug = categorySlug.value;
+  if (isSizeSubcategory(currentSlug)) {
+    const size = getSizeFromSlug(currentSlug);
+    const withoutPrefix = currentSlug.replace(/^(selection-|category-)/, '');
+    
+    // Добавляем подкатегорию с размером
+    crumbs.push({
+      title: `Пневмоударники ${size}`,
+      slug: withoutPrefix,
+      type: 'taxonomy',
+      isCurrent: true
+    });
+  } else if (categoryData.value?.category?.title) {
+    // Для обычных категорий оставляем как есть
+    const prefix = getUrlPrefix();
+    crumbs.push({
       title: categoryData.value.category.title,
-      slug: categorySlug.value
-    };
-
-    // Проверяем, нет ли уже такой категории в крошках
-    const isDuplicate = crumbs.some(crumb => 
-      crumb.title === currentCategory.title && crumb.slug === currentCategory.slug
-    );
-
-    if (!isDuplicate) {
-      crumbs.push(currentCategory);
-    }
+      slug: categorySlug.value,
+      type: categoryData.value.category.type || (prefix === 'category' ? 'taxonomy' : 'post_type'),
+      isCurrent: true
+    });
   }
-  
+
+
   return crumbs;
 });
+
+
 
 // Загрузка данных категории
 const fetchCategoryData = async () => {
@@ -85,54 +177,73 @@ const fetchCategoryData = async () => {
     if (maxPrice.value) {
       params.append('max_price', maxPrice.value);
     }
+
+    const currentSlug = categorySlug.value;
+    const withoutPrefix = currentSlug.replace(/^(selection-|category-)/, '');
     
-    const apiUrl = getApiUrl(`category/slug/${categorySlug.value}?${params.toString()}`);
+    // Определяем, является ли это подкатегорией с размером
+    const isSize = isSizeSubcategory(currentSlug);
+
+    // Формируем правильный URL для API
+    let apiUrl;
+    if (isSize) {
+      // Для подкатегорий с размером используем /selections/slug/
+      apiUrl = getApiUrl(`selections/slug/${withoutPrefix}?${params.toString()}`);
+    } else {
+      // Для обычных категорий используем /category/slug/
+      apiUrl = getApiUrl(`category/slug/${currentSlug}?${params.toString()}`);
+    }
+    
     
     const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Ошибка при загрузке данных: ${response.status}`);
-    }
-    
     const data = await response.json();
-    categoryData.value = data;
     
-    if (data.category?.title) {
-      categoryTitle.value = data.category.title;
-    }
-    
-    if (data.nested_categories && Array.isArray(data.nested_categories)) {
-      nestedCategories.value = data.nested_categories.map((cat: any) => ({
-        title: cat.title,
-        url: `/catalog/selection-${cat.slug}`
-      }));
-    } else {
-      nestedCategories.value = [];
-    }
-    
-    if (data.posts && Array.isArray(data.posts)) {
-      cardsList.value = data.posts.map((product: any) => ({
-        id: product.id,
-        title: product.title || 'Без названия',
-        link: `/catalog/product-${product.slug}`,
-        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-        alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        available: true,
-        isOrderable: !product.meta?.availability,
-        articul: product.meta?.artikul || '',
-        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-        showOldPrice: !!product.meta?.price_old,
-        slug: product.slug || '',
-        weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
-      }));
-    } else {
-      cardsList.value = [];
-    }
-    
-    if (data.pagination) {
-      totalPages.value = Number(data.pagination.pages_total) || 1;
-      // НЕ обновляем currentPage из API, так как он уже установлен из URL
+
+    if (data) {
+      categoryData.value = data;
+      
+      if (data.category?.title) {
+        categoryTitle.value = data.category.title;
+      }
+      
+      if (data.nested_categories && Array.isArray(data.nested_categories)) {
+        nestedCategories.value = data.nested_categories.map((cat: any) => ({
+          nav_id: cat.nav_id,
+          title: cat.title,
+          url: cat.type === 'taxonomy' 
+            ? `/catalog/category-${cat.slug}` 
+            : `/catalog/selection-${cat.slug}`,
+          params: {
+            is_link: cat.params?.is_link
+          }
+        }));
+      } else {
+        nestedCategories.value = [];
+      }
+
+      if (data.posts && Array.isArray(data.posts)) {
+        cardsList.value = data.posts.map((product: any) => ({
+          id: product.id,
+          title: product.title || 'Без названия',
+          link: `/catalog/product-${product.slug}`,
+          image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+          alt: product.img?.alt?.description || product.title || 'Изображение товара',
+          available: true,
+          isOrderable: !product.meta?.availability,
+          articul: product.meta?.artikul || '',
+          oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+          currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+          showOldPrice: !!product.meta?.price_old,
+          slug: product.slug || '',
+          weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
+        }));
+      } else {
+        cardsList.value = [];
+      }
+      
+      if (data.pagination) {
+        totalPages.value = Number(data.pagination.pages_total) || 1;
+      }
     }
     
   } catch (err) {
@@ -187,10 +298,11 @@ const addToCart = (id: number) => {
 
 // Обработка изменения страницы
 const handlePageChange = (page: number) => {
+  const prefix = getUrlPrefix();
   if (page === 1) {
-    router.push(`/catalog/selection-${categorySlug.value}`);
+    router.push(`/catalog/${prefix}-${categorySlug.value}`);
   } else {
-    router.push(`/catalog/selection-${categorySlug.value}/page/${page}`);
+    router.push(`/catalog/${prefix}-${categorySlug.value}/page/${page}`);
   }
 };
 
@@ -262,7 +374,7 @@ watch(
             v-if="totalPages > 1 && currentPage"
             :current-page="currentPage"
             :total-pages="totalPages"
-            :base-url="`/catalog/selection-${categorySlug}`"
+            :base-url="`/catalog/${getUrlPrefix()}-${categorySlug}`"
             @page-change="handlePageChange"
           />
         </section>

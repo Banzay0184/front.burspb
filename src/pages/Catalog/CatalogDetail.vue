@@ -87,7 +87,7 @@ const fetchProductData = async () => {
       breadcrumbs.value = [
         { 
           title: 'Каталог',
-          url: '/catalog/CatalogPage'
+          url: '/catalog'
         },
         { 
           title: productData.value.title,

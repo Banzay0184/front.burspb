@@ -23,15 +23,14 @@ const routes = [
     component: HomePage,
   },
   {
-    path: '/Catalog/CatalogPage',
+    path: '/catalog',
     name: 'CatalogPage',
     component: CatalogPage,
   },
   {
-    path: '/Statji/StatjiPage',
+    path: '/statji',
     name: 'StatjiPage',
     component: StatjiPage,
-    alias: '/statji'
   },
   {
     path: '/statji/category/:category',
@@ -39,27 +38,27 @@ const routes = [
     component: StatjiPage,
   },
   {
-    path: '/Garantiya/GarantiyaPage',
+    path: '/garantiya',
     name: 'GarantiyaPage',
     component: GarantiyaPage,
   },
   {
-    path: '/Oplata/OplataPage',
+    path: '/oplata',
     name: 'OplataPage',
     component: OplataPage,
   },
   {
-    path: '/Dostavka/DostavkaPage',
+    path: '/dostavka',
     name: 'DostavkaPage',
     component: DostavkaPage,
   },
   {
-    path: '/Okompanii/OkompaniiPage',
+    path: '/o-kompanii',
     name: 'OkompaniiPage',
     component: OkompaniiPage,
   },
   {
-    path: '/Kontakty/KontaktyPage',
+    path: '/kontakty',
     name: 'KontaktyPage',
     component: KontaktyPage,
   },
@@ -85,13 +84,23 @@ const routes = [
     component: ApiTest,
   },
   {
-    path: '/catalog/selection-:slug',
+    path: '/catalog/category-:slug',
     name: 'CategoryDetail',
     component: CategoryBurovyeDolota,
   },
   {
-    path: '/catalog/selection-:slug/page/:page',
+    path: '/catalog/category-:slug/page/:page',
     name: 'CategoryDetailPagination',
+    component: CategoryBurovyeDolota,
+  },
+  {
+    path: '/catalog/selection-:slug',
+    name: 'SelectionDetail',
+    component: CategoryBurovyeDolota,
+  },
+  {
+    path: '/catalog/selection-:slug/page/:page',
+    name: 'SelectionDetailPagination',
     component: CategoryBurovyeDolota,
   },
   {

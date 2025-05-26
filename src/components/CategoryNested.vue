@@ -1,7 +1,13 @@
 <script setup lang="ts">
 interface CategoryItem {
+  nav_id: number;
   title: string;
   url: string;
+  params?: {
+    is_link?: {
+      title: string;
+    };
+  };
 }
 
 defineProps<{
@@ -15,7 +21,7 @@ defineProps<{
     <h2 v-if="title" class="section-title">{{ title }}</h2>
     <ul>
       <li v-for="(item, index) in items" :key="index">
-        <a :href="item.url">{{ item.title }}</a>
+        <a :href="item.url">{{ item.params?.is_link?.title || item.title }}</a>
       </li>
     </ul>
   </section>

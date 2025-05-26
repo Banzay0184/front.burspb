@@ -28,11 +28,11 @@ const getIconPath = (iconClass: string) => {
 };
 
 const getRoutePath = (slug: string) => {
-  if (slug === 'garantiya') return '/Garantiya/GarantiyaPage';
-  if (slug === 'oplata') return '/Oplata/OplataPage';
-  if (slug === 'dostavka') return '/Dostavka/DostavkaPage';
-  if (slug === 'o-kompanii') return '/Okompanii/OkompaniiPage';
-  if (slug === 'kontakty') return '/Kontakty/KontaktyPage';
+  if (slug === 'garantiya') return '/garantiya';
+  if (slug === 'oplata') return '/oplata';
+  if (slug === 'dostavka') return '/dostavka';
+  if (slug === 'o-kompanii') return '/o-kompanii';
+  if (slug === 'kontakty') return '/kontakty';
   return `/${slug}`;
 };
 
@@ -55,7 +55,7 @@ onMounted(() => {
   <nav class="navigation navigation--header">
     <ul itemtype="http://schema.org/SiteNavigationElement">
       <li class="navigation__item">
-        <RouterLink to="/Catalog/CatalogPage" itemprop="url">
+        <RouterLink to="/catalog" itemprop="url">
           <span class="navigation__item__icon navigation__item__icon--icon-page-1">
             <img src="/image/e93b66.svg" width="28" height="28" alt="Перейти в каталог" loading="lazy" />
           </span>
@@ -63,7 +63,7 @@ onMounted(() => {
         </RouterLink>
       </li>
       <li class="navigation__item">
-        <RouterLink to="/Statji/StatjiPage" itemprop="url">
+        <RouterLink to="/statji" itemprop="url">
           <span class="navigation__item__icon navigation__item__icon--icon-page-7">
             <img src="/image/a16de5.svg" width="28" height="28" alt="Перейти к статьям" loading="lazy" />
           </span>

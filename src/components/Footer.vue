@@ -92,11 +92,11 @@ const getCategoryPath = (category: any) => {
 
 const getPagePath = (item: any) => {
   const pageMap: Record<string, string> = {
-    'garantiya': '/Garantiya/GarantiyaPage',
-    'oplata': '/Oplata/OplataPage',
-    'dostavka': '/Dostavka/DostavkaPage',
-    'o-kompanii': '/Okompanii/OkompaniiPage',
-    'kontakty': '/Kontakty/KontaktyPage'
+    'garantiya': '/garantiya',
+    'oplata': '/oplata',
+    'dostavka': '/dostavka',
+    'o-kompanii': '/o-kompanii',
+    'kontakty': '/kontakty'
   };
   
   return pageMap[item.slug] || `/${item.slug}`;
@@ -217,7 +217,7 @@ const getPagePath = (item: any) => {
                 </RouterLink>
               </li>
               <li class="navigation__item">
-                <RouterLink to="/Statji/StatjiPage" itemprop="url">
+                <RouterLink to="/statji" itemprop="url">
                     <span class="navigation__item__title">Статьи</span>
                 </RouterLink>
               </li>
@@ -236,7 +236,7 @@ const getPagePath = (item: any) => {
           <nav class="categories categories--footer">
             <ul itemtype="http://schema.org/SiteNavigationElement">
               <li class="categories__item">
-                  <RouterLink to="/Catalog/CatalogPage" itemprop="url">
+                  <RouterLink to="/catalog" itemprop="url">
                       <span class="categories__item__title">Каталог</span>
                   </RouterLink>
               </li>

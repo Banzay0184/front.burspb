@@ -4,6 +4,7 @@ interface BreadcrumbItem {
   url?: string;
   slug?: string;
   isCurrent?: boolean;
+  type?: string;
 }
 
 defineProps<{
@@ -12,14 +13,26 @@ defineProps<{
 
 const getBreadcrumbUrl = (item: BreadcrumbItem) => {
   if (item.isCurrent) return '';
-  return item.url || (item.slug ? `/catalog/selection-${item.slug}` : '');
+  if (item.url) return item.url;
+  if (item.slug) {
+
+    if (item.slug.startsWith('category-') || item.slug.startsWith('selection-')) {
+      return `/catalog/${item.slug}`;
+    }
+
+    const prefix = item.type === 'taxonomy' ? 'category' : 'selection';
+    return `/catalog/${prefix}-${item.slug}`;
+  }
+  return '';
 };
+
+
 </script>
 
 <template>
   <nav class="breadcrumbs" aria-label="Навигация по сайту">
     <ul itemscope itemtype="http://schema.org/BreadcrumbList">
-      <!-- Главная -->
+
       <li 
         itemprop="itemListElement" 
         itemscope 
@@ -35,14 +48,14 @@ const getBreadcrumbUrl = (item: BreadcrumbItem) => {
         <meta itemprop="position" content="1" />
       </li>
 
-      <!-- Каталог -->
+
       <li 
         itemprop="itemListElement" 
         itemscope 
         itemtype="http://schema.org/ListItem"
       >
         <a 
-          href="/catalog/CatalogPage" 
+          href="/catalog" 
           itemprop="item"
         >
           <span itemprop="name">Каталог</span>
@@ -50,7 +63,6 @@ const getBreadcrumbUrl = (item: BreadcrumbItem) => {
         <meta itemprop="position" content="2" />
       </li>
       
-      <!-- Динамические элементы -->
       <template v-if="items && items.length > 0">
         <li 
           v-for="(item, index) in items" 

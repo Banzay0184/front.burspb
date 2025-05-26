@@ -162,7 +162,7 @@ onUnmounted(() => {
               <div class="col col--right">
                 <div>
                   <span class="button-wrapper">
-                    <RouterLink to="/catalog/CatalogPage" class="button button--blue button--outline">
+                    <RouterLink to="/catalog" class="button button--blue button--outline">
                       Продолжить покупки
                     </RouterLink>
                   </span>
@@ -191,7 +191,7 @@ onUnmounted(() => {
             <p>Выберите нужные позиции из каталога продукции и добавьте их в корзину</p>
             <div class="empty-basket-action">
               <span class="button-wrapper">
-                <RouterLink to="/catalog/CatalogPage" class="button button--blue button--outline">
+                <RouterLink to="/catalog" class="button button--blue button--outline">
                   В каталог →
                 </RouterLink>
               </span>
