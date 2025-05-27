@@ -81,7 +81,7 @@ const getPageUrl = (page: number) => {
 
 
 <template>
-  <nav v-if="totalPages > 1">  
+  <nav v-if="totalPages > 1">
     <ul class="pagination">
       <li :class="`pagination__item pagination__item--prev ${!hasPrevPage ? 'pagination__item--prev--inactive' : ''}`">
         <a v-if="hasPrevPage" :href="getPageUrl(prevPage)" @click.prevent="handlePageChange(prevPage)" tabindex="0">
