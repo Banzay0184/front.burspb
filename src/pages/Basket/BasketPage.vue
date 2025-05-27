@@ -105,7 +105,7 @@ onUnmounted(() => {
                     {{ item.title }}
                   </RouterLink>
                   <span class="basket__list__item__cell--title-price">
-                    Цена за ед. {{ item.price }}
+                    Цена за ед. <span>{{ (parseFloat(item.price.replace(/\s+/g, '').replace('₽', '')) * item.quantity).toLocaleString('ru-RU') }} ₽</span>
                   </span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--artikul">
