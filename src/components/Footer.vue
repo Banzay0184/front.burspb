@@ -272,13 +272,9 @@ const getPagePath = (item: any) => {
           
           <div class="dev-by">
             <div>
-              <div class="dev-by__prime">
-                <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Разработка сайта и СЕО продвижение</a>
-                <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank">KLS Digital</a>
-              </div>
               <div class="dev-by__coder">
                 <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Программирование и поддержка</a>
-                <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank">Atypicalcoder.Dev</a>
+                <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank"> Atypicalcoder.Dev</a>
               </div>
             </div>
           </div>

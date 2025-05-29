@@ -1,16 +1,23 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 
     defineOptions({
       name: 'OplataPage.vue'
     })
+
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Оплата', url: '', isCurrent: true }
+]);
 </script>
 
 <template>
 <main class="main">
     <div class="wrapper">
-       <Breadcrumbs />
+       <Breadcrumbs :items="breadcrumbs" />
 
         <article class="article post">
             <header><h1 class="title post__title">Оплата</h1></header>
@@ -36,7 +43,6 @@ import Gratitude from '../../components/Gratitude.vue';
     <div class="wrapper">
       <Gratitude />
     </div>
-
 </main>
 
 

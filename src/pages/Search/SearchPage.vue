@@ -26,10 +26,19 @@ const hasResults = computed(() =>
 
 // Хлебные крошки
 const breadcrumbs = computed(() => {
-  return [
+  const crumbs = [
     { title: 'Главная', url: '/' },
-    { title: 'Поиск', url: '' }
+    { title: 'Поиск', url: '/search' }
   ];
+  
+  if (searchQuery.value) {
+    crumbs.push({
+      title: `Результаты поиска: ${searchQuery.value}`,
+      url: '',
+    });
+  }
+  
+  return crumbs;
 });
 
 // Заголовок страницы

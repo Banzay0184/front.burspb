@@ -129,21 +129,27 @@ const getPageUrl = (page: number) => {
 .pagination {
   display: flex;
   justify-content: center;
+  align-items: center;
   list-style: none;
   padding: 1rem 0;
   margin: 0;
+  gap: 0.25rem;
   
   &__item {
-    margin: 0 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     a, span {
-      display: inline-block;
-      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
       text-decoration: none;
       color: #333;
       border-radius: 4px;
       min-width: 2.5rem;
-      text-align: center;
+      min-height: 2.5rem;
       
       &:hover {
         background-color: #f0f0f0;
@@ -153,11 +159,13 @@ const getPageUrl = (page: number) => {
     &__active {
       background-color: #0cf;
       color: white;
-      padding: 0.5rem 1rem;
+      padding: 0.5rem;
       border-radius: 4px;
-      display: inline-block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       min-width: 2.5rem;
-      text-align: center;
+      min-height: 2.5rem;
       
       strong {
         color: white;

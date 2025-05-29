@@ -154,6 +154,15 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('cart-changed', handleCartChange);
 });
+
+// Форматирование цены
+const formattedPrice = computed(() => {
+  const price = props.productData.price;
+  if (price === '0 ₽' || price === '0000 ₽') {
+    return 'по запросу';
+  }
+  return price;
+});
 </script>
 
 <template>
@@ -168,7 +177,8 @@ onUnmounted(() => {
                     <div class="product__summary__col">
                         <div itemprop="offers" itemscope itemtype="http://schema.org/Offer" class="product__meta__price">
                             <span class="product__meta__price__current">
-                                <i itemprop="price">{{ productData.price }}</i> <i itemprop="priceCurrency" content="RUB">₽</i>
+                                <i itemprop="price">{{ formattedPrice }}</i>
+                                <i v-if="formattedPrice !== 'по запросу'" itemprop="priceCurrency" content="RUB">₽</i>
                                 <i class="product__meta__price__current__note">* Цена может отличаться, уточняйте при оформлении заказа</i>
                             </span>
                             <link itemprop="availability" href="https://schema.org/InStock" />

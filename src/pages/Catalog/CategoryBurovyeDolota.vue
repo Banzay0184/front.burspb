@@ -62,6 +62,7 @@ interface CategoryBreadcrumb {
   slug: string;
   type?: string;
   isCurrent?: boolean;
+  url?: string;
 }
 
 interface CategoryData {
@@ -115,7 +116,10 @@ const isSizeSubcategory = (slug: string) => {
 
 // Формирование хлебных крошек
 const breadcrumbs = computed(() => {
-  const crumbs: CategoryBreadcrumb[] = [];
+  const crumbs: CategoryBreadcrumb[] = [
+    { title: 'Главная', url: '/', slug: 'home' },
+    { title: 'Каталог', url: '/catalog', slug: 'catalog' } 
+  ];
 
   // Добавляем данные из breadcrumbs API
   if (categoryData.value?.breadcrumbs && Array.isArray(categoryData.value.breadcrumbs)) {
@@ -128,6 +132,7 @@ const breadcrumbs = computed(() => {
       };
     }));
   }
+
 
   // Проверяем, является ли текущая категория подкатегорией с размером
   const currentSlug = categorySlug.value;
@@ -327,7 +332,7 @@ watch(
   <main class="main">
     <div class="wrapper category-products">
       <!-- Хлебные крошки -->
-      <Breadcrumbs :items="breadcrumbs" />
+      <Breadcrumbs :items="breadcrumbs" /> 
 
       <!-- Вложенные категории -->
       <CategoryNested 

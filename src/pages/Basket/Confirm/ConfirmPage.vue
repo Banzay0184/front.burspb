@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Breadcrumbs from '../../../components/Breadcrumbs.vue';
 import { CartService, getApiUrl } from '../../../api/api';
+import PhoneInput from '../../../components/PhoneInput.vue';
 
 // Маршрутизация
 const router = useRouter();
@@ -286,14 +287,12 @@ onMounted(() => {
                           <label for="phone" class="label">
                             Телефон <span class="required">*</span>
                           </label>
-                          <input 
-                            type="text" 
+                          <PhoneInput 
                             id="phone" 
                             name="phone" 
-                            class="input" 
                             v-model="formData.phone" 
                             required
-                          >
+                          />
                         </div>
                         <div class="form__row">
                           <label for="email" class="label">
@@ -358,14 +357,12 @@ onMounted(() => {
                           <label for="phone" class="label">
                             Телефон <span class="required">*</span>
                           </label>
-                          <input 
-                            type="text" 
+                          <PhoneInput 
                             id="phone" 
                             name="phone" 
-                            class="input" 
                             v-model="formData.phone" 
                             required
-                          >
+                          />
                         </div>
                       </template>
                     </div>

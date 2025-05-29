@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Pagination from '../../components/Pagination.vue';
@@ -44,6 +44,12 @@ const error = ref<string | null>(null);
 const posts = ref<any[]>([]);
 const categoryName = ref<string | null>(null);
 const categorySlug = ref<string | null>(null);
+
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Статьи', url: '', isCurrent: true }
+]);
 
 const getCategorySlug = () => {
   // Получаем slug категории из параметров маршрута, если он есть
@@ -111,7 +117,7 @@ const handlePageChange = (page: number) => {
   <div class="main">
     <div class="wrapper category-posts">
 
-      <Breadcrumbs />
+      <Breadcrumbs :items="breadcrumbs" />  
 
       <section class="section recent-posts">
         <div class="section-title">

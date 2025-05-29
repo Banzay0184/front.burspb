@@ -3,7 +3,7 @@ import axios, { type AxiosInstance } from 'axios';
 // Конфигурация API URL в зависимости от окружения
 const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
-    return 'https://ch32205.tw1.ru/data/v1';
+    return 'https://admin.burspb.com/data/v1';
   }
   return '/api/data/v1';
 };
@@ -17,7 +17,7 @@ export const getApiUrl = (endpoint: string = '') => {
 
 // Функция для получения URL файлов (статические ресурсы)
 export const getFileUrl = (path: string) => {
-  const baseUrl = import.meta.env.DEV ? 'https://ch32205.tw1.ru' : '';
+  const baseUrl = import.meta.env.DEV ? 'https://admin.burspb.com' : '';
   return `${baseUrl}/api/files/${path.replace(/^\//, '')}`;
 };
 

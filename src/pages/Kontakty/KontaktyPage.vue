@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import HekpForm from './components/HelpForm.vue';
@@ -7,13 +8,19 @@ import Map from './components/Map.vue';
 defineOptions({
     name: 'KontaktyPage.vue'
 })
+
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Контакты', url: '', isCurrent: true }
+]);
 </script>
 
 <template>
 <div>
     <main class="main">
         <div class="wrapper">
-            <Breadcrumbs />
+            <Breadcrumbs :items="breadcrumbs" />
             <article class="article post">
                 <header><h1 class="title post__title">Контакты</h1></header>
                 <div class="content post__content">

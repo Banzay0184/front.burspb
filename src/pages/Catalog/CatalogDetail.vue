@@ -71,11 +71,15 @@ const fetchProductData = async () => {
     
     // Формируем хлебные крошки
     if (data.breadcrumbs && Array.isArray(data.breadcrumbs)) {
-      breadcrumbs.value = data.breadcrumbs.map((item: any) => ({
-        title: item.title,
-        slug: item.slug || '',
-        url: item.slug ? `/catalog/selection-${item.slug}` : null
-      }));
+      breadcrumbs.value = [
+        { title: 'Главная', url: '/', slug: 'home' },
+        { title: 'Каталог', url: '/catalog', slug: 'catalog' },
+        ...data.breadcrumbs.map((item: any) => ({
+          title: item.title,
+          slug: item.slug || '',
+          url: item.slug ? `/catalog/selection-${item.slug}` : null
+        }))
+      ];
 
       // Добавляем текущий продукт в конец хлебных крошек
       breadcrumbs.value.push({
@@ -85,10 +89,8 @@ const fetchProductData = async () => {
       });
     } else {
       breadcrumbs.value = [
-        { 
-          title: 'Каталог',
-          url: '/catalog'
-        },
+        { title: 'Главная', url: '/', slug: 'home' },
+        { title: 'Каталог', url: '/catalog', slug: 'catalog' },
         { 
           title: productData.value.title,
           url: '',
@@ -192,7 +194,7 @@ onUnmounted(() => {
 <template>
 <main class="main">
     
-    <Breadcrumbs :items="breadcrumbs" />
+    <Breadcrumbs :items="breadcrumbs" /> 
 
     <div v-if="isLoading" class="loading">
       Загрузка информации о продукте...

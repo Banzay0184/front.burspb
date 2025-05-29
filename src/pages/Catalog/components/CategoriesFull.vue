@@ -72,7 +72,6 @@ const getIconPath = (iconClass: string | null) => {
 
 // Функция для формирования URL категории
 const getCategoryPath = (category: CategoryItem) => {
-  console.log(category);
   
   if (category.type === 'taxonomy') {
     return `/catalog/category-${category.slug}`

@@ -38,6 +38,14 @@ const cards = ref<Card[]>([...props.initialCards])
 const isLoading = ref(false)
 const hasMoreCards = ref(props.additionalCards.length > 0)
 
+// Форматирование цены
+const formatPrice = (price: string) => {
+  if (price === '0 ₽' || price === '0000 ₽') {
+    return 'по запросу'
+  }
+  return price
+}
+
 // Метод для добавления товара в корзину
 const addToCart = (card: Card) => {
   if (!card.available) return;
@@ -122,10 +130,10 @@ onUnmounted(() => {
         </div>
         <div class="card__inner">
           <h2 itemprop="headline" class="card__title card__title--card">
-          <RouterLink :to="card.link">
+            <RouterLink :to="card.link">
               {{ card.title }}
             </RouterLink>
-            </h2>
+          </h2>
           <div class="card__meta">
             <div class="card__meta__row" style="align-items: center;">
               <div 
@@ -145,8 +153,8 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="card__price">
-            <span v-if="card.showOldPrice || card.oldPrice" class="card__price__old">{{ card.oldPrice }}</span> 
-            <span class="card__price__current">{{ card.currentPrice }}</span>
+            <span v-if="card.showOldPrice || card.oldPrice" class="card__price__old">{{ formatPrice(card.oldPrice) }}</span> 
+            <span class="card__price__current">{{ formatPrice(card.currentPrice) }}</span>
           </div>
           <div class="card__actions">
             <div>

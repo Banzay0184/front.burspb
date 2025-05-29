@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Props {
   title?: string
@@ -29,11 +29,13 @@ const emit = defineEmits(['sort-change', 'price-filter-change']);
 const minPriceInput = ref('');
 const maxPriceInput = ref('');
 const selectedSort = ref('price-asc');
+let filterTimeout: number | null = null;
 
 // Обработчики изменений
 const handleSortChange = (event: Event) => {
   const selectElement = event.target as HTMLSelectElement;
   selectedSort.value = selectElement.value;
+
   emit('sort-change', selectedSort.value);
 };
 
@@ -44,34 +46,42 @@ const applyPriceFilter = () => {
   
   // Преобразуем значения в числа, если они не пустые
   if (minPriceInput.value !== '') {
-    min = parseInt(minPriceInput.value);
-    if (isNaN(min)) min = null;
+    const minValue = parseInt(minPriceInput.value);
+    if (!isNaN(minValue) && minValue >= 0) {
+      min = minValue.toString();
+    }
   }
   
   if (maxPriceInput.value !== '') {
-    max = parseInt(maxPriceInput.value);
-    if (isNaN(max)) max = null;
+    const maxValue = parseInt(maxPriceInput.value);
+    if (!isNaN(maxValue) && maxValue >= 0) {
+      max = maxValue.toString();
+    }
   }
   
   // Если оба значения указаны и минимальное больше максимального, меняем их местами
-  if (min !== null && max !== null && min > max) {
+  if (min !== null && max !== null && parseInt(min) > parseInt(max)) {
     const temp = min;
     min = max;
     max = temp;
     
     // Обновляем поля ввода
-    minPriceInput.value = min.toString();
-    maxPriceInput.value = max.toString();
+    minPriceInput.value = min;
+    maxPriceInput.value = max;
   }
   
+
+  
   // Отправляем событие фильтрации
-  emit('price-filter-change', 
-       min !== null ? min.toString() : null, 
-       max !== null ? max.toString() : null);
+  emit('price-filter-change', min, max);
 };
 
 // Обработчик потери фокуса полями ввода
 const handleBlur = () => {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+    filterTimeout = null;
+  }
   applyPriceFilter();
 };
 
@@ -79,9 +89,34 @@ const handleBlur = () => {
 const handleKeyPress = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     event.preventDefault();
+    if (filterTimeout) {
+      clearTimeout(filterTimeout);
+      filterTimeout = null;
+    }
     applyPriceFilter();
   }
 };
+
+// Обработчик изменения значений в полях ввода
+const handleInputChange = () => {
+  // Отменяем предыдущий таймаут, если он есть
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+  }
+  
+  // Устанавливаем новый таймаут
+  filterTimeout = window.setTimeout(() => {
+    applyPriceFilter();
+    filterTimeout = null;
+  }, 1000); // Увеличиваем задержку до 1 секунды
+};
+
+// Очистка таймаута при размонтировании компонента
+onUnmounted(() => {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+  }
+});
 
 // Инициализация начальных значений
 onMounted(() => {
@@ -107,9 +142,11 @@ onMounted(() => {
                 type="number" 
                 class="input-number" 
                 v-model="minPriceInput"
+                @input="handleInputChange"
                 @keypress="handleKeyPress"
                 @blur="handleBlur"
                 min="0"
+                placeholder="0"
               />
             </div>
             <div>
@@ -119,9 +156,11 @@ onMounted(() => {
                 type="number" 
                 class="input-number" 
                 v-model="maxPriceInput"
+                @input="handleInputChange"
                 @keypress="handleKeyPress"
                 @blur="handleBlur"
                 min="0"
+                placeholder="∞"
               />
             </div>
           </div>

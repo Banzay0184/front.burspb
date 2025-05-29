@@ -32,37 +32,6 @@ const getBreadcrumbUrl = (item: BreadcrumbItem) => {
 <template>
   <nav class="breadcrumbs" aria-label="Навигация по сайту">
     <ul itemscope itemtype="http://schema.org/BreadcrumbList">
-
-      <li 
-        itemprop="itemListElement" 
-        itemscope 
-        itemtype="http://schema.org/ListItem"
-      >
-        <a 
-          href="/" 
-          itemprop="item"
-          class="nuxt-link-active"
-        >
-          <span itemprop="name">Главная</span>
-        </a>
-        <meta itemprop="position" content="1" />
-      </li>
-
-
-      <li 
-        itemprop="itemListElement" 
-        itemscope 
-        itemtype="http://schema.org/ListItem"
-      >
-        <a 
-          href="/catalog" 
-          itemprop="item"
-        >
-          <span itemprop="name">Каталог</span>
-        </a>
-        <meta itemprop="position" content="2" />
-      </li>
-      
       <template v-if="items && items.length > 0">
         <li 
           v-for="(item, index) in items" 
@@ -83,7 +52,7 @@ const getBreadcrumbUrl = (item: BreadcrumbItem) => {
           <template v-else>
             <span itemprop="name">{{ item.title }}</span>
           </template>
-          <meta itemprop="position" :content="String(index + 3)" />
+          <meta itemprop="position" :content="String(index + 1)" />
         </li>
       </template>
     </ul>

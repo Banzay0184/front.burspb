@@ -10,7 +10,7 @@ interface SocialItem {
 
 const socialLinks = ref<SocialItem[]>([
   {
-    title: 'Email',
+    title: 'info@burspb.com',
     url: 'mailto:info@burspb.com',
     icon: 'fa fa-envelope'
   },

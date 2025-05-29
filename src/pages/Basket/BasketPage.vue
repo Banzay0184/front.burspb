@@ -14,6 +14,7 @@ const breadcrumbs = ref([
 
 // Загрузка данных корзины
 const loadCart = () => {
+
   isLoading.value = true;
   cartItems.value = CartService.getCart();
   isLoading.value = false;
@@ -22,7 +23,11 @@ const loadCart = () => {
 // Вычисляемые свойства
 const isCartEmpty = computed(() => cartItems.value.length === 0);
 const cartTotal = computed(() => {
-  return CartService.getCartTotal().toLocaleString('ru-RU');
+  const total = cartItems.value.reduce((sum, item) => {
+    const price = parseFloat(item.price.replace(/\s+/g, '').replace('₽', ''));
+    return sum + (price * item.quantity);
+  }, 0);
+  return total.toLocaleString('ru-RU');
 });
 const cartWeight = computed(() => {
   // Вычисляем общий вес товаров в корзине (если данные о весе есть)
@@ -39,10 +44,36 @@ const cartWeight = computed(() => {
   return totalWeight.toFixed(2);
 });
 
+// Форматирование цены
+const formatPrice = (price: string) => {
+  if (price === '0 ₽' || price === '0000 ₽') {
+    return 'по запросу'
+  }
+  return price
+}
+
+// Получение цены товара
+const getItemPrice = (item: any) => {
+  return formatPrice(item.price)
+}
+
+// Функция для получения общей цены товара
+const getItemTotalPrice = (item: any) => {
+  const price = parseFloat(item.price.replace(/\s+/g, '').replace('₽', ''));
+  return (price * item.quantity).toLocaleString('ru-RU');
+};
+
 // Обработчики событий
 const handleQuantityChange = (id: number, quantity: number) => {
-  CartService.updateItemQuantity(id, quantity);
-  loadCart();
+  const cart = CartService.getCart();
+  const itemIndex = cart.findIndex(item => item.id === id);
+  
+  if (itemIndex !== -1) {
+    cart[itemIndex].quantity = Math.max(1, quantity);
+    localStorage.setItem('burspb_cart', JSON.stringify(cart));
+    cartItems.value = cart; // Немедленно обновляем состояние
+    window.dispatchEvent(new CustomEvent('cart-changed'));
+  }
 };
 
 const increaseQuantity = (id: number) => {
@@ -105,7 +136,7 @@ onUnmounted(() => {
                     {{ item.title }}
                   </RouterLink>
                   <span class="basket__list__item__cell--title-price">
-                    Цена за ед. <span>{{ (parseFloat(item.price.replace(/\s+/g, '').replace('₽', '')) * item.quantity).toLocaleString('ru-RU') }} ₽</span>
+                    Цена за ед. <span>{{ getItemPrice(item) }}</span>
                   </span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--artikul">
@@ -136,7 +167,7 @@ onUnmounted(() => {
                   </div>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--price">
-                  <span>{{ (parseFloat(item.price.replace(/\s+/g, '').replace('₽', '')) * item.quantity).toLocaleString('ru-RU') }} ₽</span>
+                  <span>{{ getItemTotalPrice(item) }} ₽</span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--delete">
                   <button 

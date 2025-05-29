@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
@@ -50,6 +50,20 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const similarPosts = ref<any[]>([]);
 
+// Функция для получения полных данных похожей статьи
+const fetchSimilarPostData = async (slug: string) => {
+  try {
+    const response = await apiService.posts.getBySlug(slug);
+    if (response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (err) {
+    console.error('Error fetching similar post:', err);
+    return null;
+  }
+};
+
 const getPostSlug = () => {
   // Получаем slug из параметров маршрута
   return route.params.slug || 'kak-vybrat-skvazhinnyj-nasos';
@@ -68,7 +82,44 @@ const fetchPostData = async () => {
       
       // Получаем похожие статьи, если они есть
       if (apiData.similar && Array.isArray(apiData.similar)) {
-        similarPosts.value = apiData.similar.slice(0, 4); // Берем только первые 4 похожие статьи
+        // Получаем полные данные для каждой похожей статьи
+        const similarPostsPromises = apiData.similar.slice(0, 4).map(async (post) => {
+          const fullPostData = await fetchSimilarPostData(post.post_name);
+          if (fullPostData) {
+            return {
+              post_name: fullPostData.slug || post.post_name,
+              post_title: fullPostData.title || post.post_title,
+              post_date: fullPostData.date || post.post_date,
+              img: {
+                webp_square_350: fullPostData.img?.webp_square_350 || null,
+                square_350: fullPostData.img?.square_350 || null,
+                webp_full: fullPostData.img?.webp_full || null,
+                full: fullPostData.img?.full || null,
+                alt: {
+                  description: fullPostData.img?.alt?.description || fullPostData.title || post.post_title
+                }
+              }
+            };
+          }
+          // Если не удалось получить полные данные, возвращаем базовые данные
+          return {
+            post_name: post.post_name,
+            post_title: post.post_title,
+            post_date: post.post_date,
+            img: {
+              webp_square_350: null,
+              square_350: null,
+              webp_full: null,
+              full: null,
+              alt: {
+                description: post.post_title
+              }
+            }
+          };
+        });
+
+        // Ждем загрузки всех похожих статей
+        similarPosts.value = await Promise.all(similarPostsPromises);
       }
     } else {
       error.value = 'Не удалось загрузить статью. Пожалуйста, попробуйте позже.';
@@ -93,7 +144,13 @@ const getCategoryUrl = (category: { slug: string }) => {
   return `/statji/category/${category.slug}`;
 };
 
-onMounted(() => {
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Статьи', url: '/statji' },
+  { title: post.value?.title || 'Статья', url: '', isCurrent: true }
+]);
+  onMounted(() => {
   fetchPostData();
 });
 </script>
@@ -101,6 +158,7 @@ onMounted(() => {
 <template>
   <div class="main">
     <div class="wrapper">
+        <Breadcrumbs :items="breadcrumbs" />
       <div v-if="isLoading" class="loading-container">
         <p>Загрузка статьи...</p>
       </div>
@@ -161,7 +219,23 @@ onMounted(() => {
           <div class="similar-posts__grid">
             <div v-for="(similarPost, index) in similarPosts" :key="index" class="similar-posts__item">
               <a :href="`/statji/${similarPost.post_name}`" class="similar-posts__link">
+                <div class="similar-posts__image" v-if="similarPost.img?.full || similarPost.img?.webp_full || similarPost.img?.square_350 || similarPost.img?.webp_square_350">
+                  <img 
+                    :src="similarPost.img?.webp_square_350 || similarPost.img?.square_350 || similarPost.img?.webp_full || similarPost.img?.full" 
+                    :alt="similarPost.img?.alt?.description || similarPost.post_title"
+                    loading="lazy"
+                  >
+                </div>
+                <div v-else class="similar-posts__image similar-posts__image--placeholder">
+                  <i class="fa fa-file-image-o"></i>
+                </div>
                 <h3 class="similar-posts__item-title">{{ similarPost.post_title }}</h3>
+                <div class="similar-posts__meta">
+                  <span class="similar-posts__meta__item">
+                    <i class="fa fa-calendar"></i>
+                    {{ formatDate(similarPost.post_date) }}
+                  </span>
+                </div>
               </a>
             </div>
           </div>
@@ -219,7 +293,7 @@ onMounted(() => {
   &__grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 1rem;
+    gap: 1.5rem;
     
     @media (min-width: 768px) {
       grid-template-columns: repeat(2, 1fr);
@@ -231,24 +305,82 @@ onMounted(() => {
   }
   
   &__item {
-    padding: 1rem;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     
     &:hover {
-      background-color: #f0f0f0;
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
   }
   
   &__link {
     text-decoration: none;
     color: inherit;
+    display: block;
+  }
+  
+  &__image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background-color: #f5f5f5;
+    
+    &--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f0f0f0;
+      
+      i {
+        font-size: 3rem;
+        color: #ccc;
+      }
+    }
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
   }
   
   &__item-title {
-    font-size: 1rem;
-    margin: 0;
+    font-size: 1.1rem;
+    margin: 1rem;
+    line-height: 1.4;
+    height: 3.08rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  &__meta {
+    padding: 0 1rem 1rem;
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      
+      i {
+        font-size: 0.9rem;
+      }
+    }
   }
 }
 

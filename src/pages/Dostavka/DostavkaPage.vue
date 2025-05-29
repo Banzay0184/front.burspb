@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Form from './components/Form.vue';
@@ -6,12 +7,18 @@ import Form from './components/Form.vue';
 defineOptions({
     name: 'DostavkaPage.vue'
 })
+
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Доставка', url: '', isCurrent: true }
+]);
 </script>
 
 <template>
 <main class="main">
     <div class="wrapper">
-        <Breadcrumbs />
+        <Breadcrumbs :items="breadcrumbs" />
 
         <article class="article post">
             <header><h1 class="title post__title">Доставка</h1></header>

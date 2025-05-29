@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
@@ -20,112 +20,106 @@ const totalPages = ref(1);
 const postsPerPage = ref(24);
 
 // Параметры фильтрации
-const sortType = ref('');
+const sortType = ref('price-asc');
 const priceMin = ref<string | null>(null);
 const priceMax = ref<string | null>(null);
+let fetchTimeout: number | null = null;
 
 // Функция для запроса данных с API
 const fetchProducts = async () => {
-  isLoading.value = true;
-  error.value = null;
-  
-  try {
-    // Формируем строку параметров запроса
-    const params = new URLSearchParams();
-    if (currentPage.value > 1) {
-      params.append('page', currentPage.value.toString());
-    }
-    if (sortType.value) {
-      params.append('sort', sortType.value);
-    }
-    
-    // Добавляем проверку на числовые значения для цены
-    if (priceMin.value !== null && priceMin.value !== '') {
-      const minPrice = parseInt(priceMin.value);
-      if (!isNaN(minPrice) && minPrice >= 0) {
-        params.append('price_min', minPrice.toString());
-      }
-    }
-    
-    if (priceMax.value !== null && priceMax.value !== '') {
-      const maxPrice = parseInt(priceMax.value);
-      if (!isNaN(maxPrice) && maxPrice >= 0) {
-        params.append('price_max', maxPrice.toString());
-      }
-    }
-    
-    // Выполняем запрос к API
-    const queryString = params.toString() ? `?${params.toString()}` : '';
-    const apiUrl = getApiUrl(`products/${queryString}`);
-    
-    // Устанавливаем таймаут для запроса
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
-    
-    const response = await fetch(apiUrl, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка загрузки данных: ${response.status} ${response.statusText}. ${errorText || ''}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.params) {
-      // Обрабатываем параметры от API
-    }
-    
-    // Обрабатываем данные пагинации
-    if (data.pagination) {
-      currentPage.value = data.pagination.current || 1;
-      totalPages.value = data.pagination.pages_total || 1;
-      postsPerPage.value = data.pagination.posts_per_page || 24;
-    }
-    
-    // Проверяем наличие данных в ответе
-    if (!data.posts || !Array.isArray(data.posts)) {
-      throw new Error('Некорректный формат данных: отсутствует список товаров');
-    }
-    
-    // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
-    cardsList.value = data.posts.map((product: any) => ({
-      id: product.id,
-      title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
-      link: `/catalog/product-${product.slug}`,
-      image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-      alt: product.img?.alt?.description || product.title || 'Изображение товара',
-      available: true,
-      isOrderable: !product.meta?.availability,
-      articul: product.meta?.artikul || '',
-      oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-      currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-      showOldPrice: !!product.meta?.price_old,
-      slug: product.slug || ''
-    }));
-    
-    // Очищаем дополнительные карточки, так как теперь используем пагинацию
-    cardsListAdditional.value = [];
-    
-  } catch (err: any) {
-    
-    if (err.name === 'AbortError') {
-      error.value = 'Превышено время ожидания ответа от сервера. Пожалуйста, попробуйте позже.';
-    } else {
-      error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
-    }
-    
-    cardsList.value = []; // Очищаем список товаров при ошибке
-  } finally {
-    isLoading.value = false;
+  if (fetchTimeout) {
+    clearTimeout(fetchTimeout);
   }
+
+  fetchTimeout = window.setTimeout(async () => {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      // Формируем строку параметров запроса
+      const params = new URLSearchParams();
+      
+      // Добавляем параметры пагинации
+      if (currentPage.value > 1) {
+        params.append('page', currentPage.value.toString());
+      }
+      
+      // Добавляем параметры сортировки
+      if (sortType.value) {
+        params.append('sort', sortType.value);
+      }
+      
+      // Добавляем параметры фильтрации по цене
+      if (priceMin.value !== null && priceMin.value !== '') {
+        const minPrice = parseInt(priceMin.value);
+        if (!isNaN(minPrice) && minPrice >= 0) {
+          params.append('price_min', minPrice.toString());
+        }
+      }
+      
+      if (priceMax.value !== null && priceMax.value !== '') {
+        const maxPrice = parseInt(priceMax.value);
+        if (!isNaN(maxPrice) && maxPrice >= 0) {
+          params.append('price_max', maxPrice.toString());
+        }
+      }
+      
+      // Выполняем запрос к API
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const apiUrl = getApiUrl(`products/${queryString}`);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки данных: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Обрабатываем данные пагинации
+      if (data.pagination) {
+        currentPage.value = data.pagination.current || 1;
+        totalPages.value = data.pagination.pages_total || 1;
+        postsPerPage.value = data.pagination.posts_per_page || 24;
+      }
+      
+      // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
+      cardsList.value = data.posts.map((product: any) => ({
+        id: product.id,
+        title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
+        link: `/catalog/product-${product.slug}`,
+        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+        alt: product.img?.alt?.description || product.title || 'Изображение товара',
+        available: true,
+        isOrderable: !product.meta?.availability,
+        articul: product.meta?.artikul || '',
+        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+        showOldPrice: !!product.meta?.price_old,
+        slug: product.slug || ''
+      }));
+      
+    } catch (err: any) {
+      console.error('Error fetching products:', err);
+      error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+      cardsList.value = [];
+    } finally {
+      isLoading.value = false;
+      fetchTimeout = null;
+    }
+  }, 300); // Добавляем небольшую задержку для предотвращения частых запросов
 };
+
+// Очистка таймаута при размонтировании компонента
+onUnmounted(() => {
+  if (fetchTimeout) {
+    clearTimeout(fetchTimeout);
+  }
+});
 
 // Обработчики событий
 const handlePageChange = (page: number) => {
@@ -177,13 +171,19 @@ const addToCart = (id: number) => {
 onMounted(() => {
   fetchProducts();
 });
+
+// Хлебные крошки
+const breadcrumbs = computed(() => [
+  { title: 'Главная', url: '/' },
+  { title: 'Каталог', url: '/catalog' }
+]);
 </script>
 
 <template>
     <div class="main">
         <div class="wrapper category-products">
 
-            <Breadcrumbs />
+            <Breadcrumbs :items="breadcrumbs" /> 
 
             <section class="section selected-products category-products__nav">
                 <div class="section-title"><h1 class="section-title-tag">Каталог продукции</h1></div>
