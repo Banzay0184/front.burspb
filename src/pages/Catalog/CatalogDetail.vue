@@ -45,7 +45,6 @@ const fetchProductData = async () => {
       price: product.meta?.price || '0',
       currency: 'RUB',
       availability: product.meta?.availability || false,
-      isOrderable: !product.meta?.availability,
       sku: product.meta?.artikul || '',
       weight: product.meta?.weight ? `${product.meta.weight} кг` : 'Не указан',
       delivery: {
@@ -107,12 +106,11 @@ const fetchProductData = async () => {
         link: `/catalog/product-${product.slug}`,
         image: product.img?.webp_square_350 || product.img?.square_350 || '',
         alt: product.img?.alt?.description || product.title,
-        available: product.meta?.availability || false,
+        availability: product.meta?.availability || null,
         articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: `${product.meta.price} ₽`,
         showOldPrice: !!product.meta?.price_old,
-        isOrderable: !product.meta?.availability,
         slug: product.slug,
         weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
       }));
@@ -140,9 +138,8 @@ const addToCart = (id: number) => {
       articul: product.articul,
       quantity: 1,
       slug: product.slug,
-      available: product.available,
+      availability: product.availability,
       weight: product.weight,
-      isOrderable: product.isOrderable
     });
   }
 };

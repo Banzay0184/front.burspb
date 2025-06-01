@@ -2,12 +2,14 @@
 import { ref } from 'vue';
 import apiService from '../../../api/api';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PrivacyCheckbox from '../../../components/PrivacyCheckbox.vue';
 
 // Состояние формы
 const name = ref('');
 const email = ref('');
 const phone = ref('');
 const message = ref('');
+const privacyAccepted = ref(false);
 const submitInProgress = ref(false);
 const showSuccess = ref(false);
 const successMessage = ref('');
@@ -17,6 +19,7 @@ const nameError = ref(false);
 const emailError = ref(false);
 const phoneError = ref(false);
 const messageError = ref(false);
+const privacyError = ref(false);
 const serverError = ref('');
 
 // Сообщения ошибок
@@ -33,6 +36,7 @@ const handleSubmit = async () => {
   serverError.value = '';
   emailErrorMessage.value = '';
   phoneErrorMessage.value = '';
+  privacyError.value = false;
   
   // Валидация
   let isValid = true;
@@ -62,6 +66,12 @@ const handleSubmit = async () => {
   // Проверка сообщения
   if (!message.value.trim()) {
     messageError.value = true;
+    isValid = false;
+  }
+
+  // Проверка согласия с политикой
+  if (!privacyAccepted.value) {
+    privacyError.value = true;
     isValid = false;
   }
   
@@ -114,6 +124,7 @@ const resetForm = (resetAll = true) => {
   serverError.value = '';
   emailErrorMessage.value = '';
   phoneErrorMessage.value = '';
+  privacyError.value = false;
 };
 
 // Обработчики снятия ошибок при вводе
@@ -196,6 +207,11 @@ const handlePhoneError = (message: string) => {
         @input="clearMessageError"
       ></textarea>
     </div>
+
+    <PrivacyCheckbox
+      v-model="privacyAccepted"
+      :error="privacyError"
+    />
     
     <div class="form__row form__row--action">
       <button 

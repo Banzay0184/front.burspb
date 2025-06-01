@@ -8,8 +8,7 @@ interface Card {
   link: string
   image: string
   alt: string
-  available: boolean
-  isOrderable?: boolean
+  availability: boolean
   articul: string
   oldPrice: string
   currentPrice: string
@@ -48,11 +47,11 @@ const formatPrice = (price: string) => {
 
 // Метод для добавления товара в корзину
 const addToCart = (card: Card) => {
-  if (!card.available) return;
-  
-  // Передаем действие в родительский компонент
   emit('add-to-cart', card.id);
 }
+
+console.log(cards);
+
 
 // Проверяем, есть ли товар в корзине
 const isInCart = (id: number): boolean => {
@@ -100,6 +99,9 @@ const loadMoreCards = () => {
   }, 500)
 }
 
+
+
+
 // Обновляем карточки при изменении корзины
 const handleCartChange = () => {
   // Принудительное обновление для реактивности
@@ -139,12 +141,20 @@ onUnmounted(() => {
               <div 
                 class="card__meta__availability" 
                 :class="{
-                  'available': card.available && !card.isOrderable,
-                  'orderable': card.isOrderable
+                  'available': card.availability,
+                  'orderable': card.availability ,
+                  'unavailable': !card.availability
                 }"
               >
-                <i class="fa" :class="card.isOrderable ? 'fa-clock-o' : 'fa-check'"></i> 
-                <span>{{ card.isOrderable ? 'Под заказ' : 'Есть в наличии' }}</span>
+                <i class="fa" :class="{
+                  'fa-check': card.availability === true,
+                  'fa-clock-o': card.availability,
+                  'fa-times': !card.availability
+                }"></i> 
+                <span>{{ 
+                  card.availability === true  ? 'Есть в наличии' : 
+                  'Нет в наличии' 
+                }}</span>
               </div>
               <div class="card__meta__artikul">
                 <span class="card__meta__artikul__title">Артикул:</span> 
@@ -173,9 +183,12 @@ onUnmounted(() => {
                   v-if="!isInCart(card.id)"
                   @click="addToCart(card)" 
                   class="button button--blue button--basket"
+                  :disabled="!card.availability"
                 >
-                  В корзину
+                  <!-- В корзину -->
+                  {{ card.availability }}
                 </button>
+                
                 <div v-else class="in-cart-controls">
                   <div class="basket__qty">
                     <span 
@@ -210,6 +223,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+
 .card__meta__artikul {
     display: flex;
     gap: 2px;

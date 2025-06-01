@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import Breadcrumbs from '../../../components/Breadcrumbs.vue';
 import { CartService, getApiUrl } from '../../../api/api';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PrivacyCheckbox from '../../../components/PrivacyCheckbox.vue';
 
 // Маршрутизация
 const router = useRouter();
@@ -21,7 +22,7 @@ const userType = ref('individual'); // individual, entity, existing
 const paymentMethod = ref('cash'); // cash, transfer, card
 const deliveryMethod = ref('pickup'); // pickup, delivery
 
-// Данные формы
+// Состояние формы
 const formData = ref({
   first_name: '',
   last_name: '',
@@ -34,21 +35,27 @@ const formData = ref({
   client_id: ''
 });
 
+const privacyAccepted = ref(false);
+const privacyError = ref(false);
+
 // Валидация
 const isFormValid = computed(() => {
   if (userType.value === 'individual') {
     return formData.value.first_name && 
            formData.value.last_name && 
-           formData.value.phone;
+           formData.value.phone &&
+           privacyAccepted.value;
   } else if (userType.value === 'entity') {
     return formData.value.first_name && 
            formData.value.last_name && 
            formData.value.phone && 
            formData.value.entity_name && 
-           formData.value.inn;
+           formData.value.inn &&
+           privacyAccepted.value;
   } else if (userType.value === 'existing') {
     return formData.value.client_id && 
-           formData.value.phone;
+           formData.value.phone &&
+           privacyAccepted.value;
   }
   return false;
 });
@@ -91,11 +98,15 @@ const setDeliveryMethod = (method: string) => {
 const submitOrder = async () => {
   if (!isFormValid.value) {
     errorMessage.value = 'Пожалуйста, заполните все обязательные поля';
+    if (!privacyAccepted.value) {
+      privacyError.value = true;
+    }
     return;
   }
   
   isLoading.value = true;
   errorMessage.value = '';
+  privacyError.value = false;
   
   try {
     // Формируем данные заказа
@@ -445,16 +456,21 @@ onMounted(() => {
                     </div>
                   </div>
                   
-                  <!-- Кнопка отправки формы -->
-                  <div class="form__row form__row--action">
-                    <button 
-                      type="submit" 
-                      class="button button--blue button--cover" 
-                      :disabled="isLoading"
-                    >
-                      {{ isLoading ? 'Отправка...' : 'Оформить заказ' }}
-                    </button>
-                  </div>
+                  <PrivacyCheckbox
+                    v-model="privacyAccepted"
+                    :error="privacyError"
+                  />
+                </div>
+                
+                <!-- Кнопка отправки формы -->
+                <div class="form__row form__row--action">
+                  <button 
+                    type="submit" 
+                    class="button button--blue button--cover" 
+                    :disabled="isLoading"
+                  >
+                    {{ isLoading ? 'Отправка...' : 'Оформить заказ' }}
+                  </button>
                 </div>
               </form>
             </div>

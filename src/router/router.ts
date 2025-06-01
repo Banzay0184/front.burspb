@@ -14,6 +14,10 @@ import BasketPage from '../pages/Basket/BasketPage.vue';
 import ConfirmPage from '../pages/Basket/Confirm/ConfirmPage.vue';
 import ApiTest from '../pages/ApiTest.vue';
 import SearchPage from '../pages/Search/SearchPage.vue';
+import TestProducts from '../pages/TestProducts.vue';
+import PolicyPage from '../pages/Policy/PolicyPage.vue';
+import TermsPage from '../pages/Terms/TermsPage.vue';
+import CookiePolicyPage from '../pages/CookiePolicy/CookiePolicyPage.vue';
 
 
 const routes = [
@@ -112,6 +116,26 @@ const routes = [
     path: '/search',
     name: 'SearchPage',
     component: SearchPage,
+  },
+  {
+    path: '/policy',
+    name: 'PolicyPage',
+    component: PolicyPage,
+  },
+  {
+    path: '/terms',
+    name: 'TermsPage',
+    component: TermsPage,
+  },
+  {
+    path: '/cookie-policy',
+    name: 'CookiePolicyPage',
+    component: CookiePolicyPage,
+  },
+  {
+    path: '/test-products',
+    name: 'TestProducts',
+    component: TestProducts,
   },
 ];
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import apiService from '../api/api';
+import { ref } from 'vue';
 
 interface SocialItem {
   title: string;
@@ -26,19 +25,6 @@ const socialLinks = ref<SocialItem[]>([
   }
 ]);
 
-const fetchGlobalData = async () => {
-  try {
-    const response = await apiService.getGlobals();
-    if (response.data && response.data.social && Array.isArray(response.data.social)) {
-      socialLinks.value = response.data.social;
-    }
-  } catch (error) {
-  }
-};
-
-onMounted(() => {
-  fetchGlobalData();
-});
 </script>
 
 <template>

@@ -57,7 +57,7 @@ onMounted(() => {
                 </div>
                 <div>
                     <span class="button-wrapper">
-                        <RouterLink class="button button--blue button--cover" to="/Statji/StatjiPage" itemprop="url">
+                        <RouterLink class="button button--blue button--cover" to="/statji" itemprop="url">
                             Подробнее
                         </RouterLink>
                     </span>

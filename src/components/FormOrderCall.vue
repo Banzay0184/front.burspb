@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import PhoneInput from './PhoneInput.vue';
 import apiService from '../api/api';
+import PrivacyCheckbox from './PrivacyCheckbox.vue';
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -9,9 +10,11 @@ const emit = defineEmits<{
 
 const name = ref('');
 const phone = ref('');
+const privacyAccepted = ref(false);
 const nameError = ref(false);
 const phoneError = ref(false);
 const phoneErrorMessage = ref(''); // Добавляем ref для хранения сообщения об ошибке
+const privacyError = ref(false);
 const showSuccess = ref(false);
 const submitInProgress = ref(false);
 const successMessage = ref('');
@@ -22,6 +25,7 @@ const handleSubmit = async () => {
   nameError.value = false;
   phoneError.value = false;
   phoneErrorMessage.value = '';
+  privacyError.value = false;
   serverError.value = '';
   
   let isValid = true;
@@ -35,6 +39,11 @@ const handleSubmit = async () => {
   if (cleanPhone.length !== 11) {
     phoneError.value = true;
     phoneErrorMessage.value = 'Введите корректный телефон';
+    isValid = false;
+  }
+
+  if (!privacyAccepted.value) {
+    privacyError.value = true;
     isValid = false;
   }
   
@@ -74,9 +83,11 @@ const resetForm = () => {
   showSuccess.value = false;
   name.value = '';
   phone.value = '';
+  privacyAccepted.value = false;
   nameError.value = false;
   phoneError.value = false;
   phoneErrorMessage.value = '';
+  privacyError.value = false;
   serverError.value = '';
   emit('close');
 };
@@ -125,6 +136,12 @@ const handlePhoneError = (message: string) => {
                 @error="handlePhoneError"
             />
         </div>
+
+        <PrivacyCheckbox
+          v-model="privacyAccepted"
+          :error="privacyError"
+        />
+
         <div class="form__row form__row--action">
             <button 
                 type="submit" 

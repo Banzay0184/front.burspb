@@ -4,6 +4,8 @@ import Header from './components/Header.vue';
 import Footer from './components/Footer.vue';
 import NavigationQuick from './components/NavigationQuick.vue';
 import apiService from './api/api';
+import { RouterView } from 'vue-router';
+import CookieBanner from './components/CookieBanner.vue';
 
 const favicon = ref('/favicon.ico'); // Значение по умолчанию
 
@@ -44,6 +46,7 @@ onMounted(() => {
       <router-view/>
       <Footer />
       <NavigationQuick />
+      <CookieBanner />
     </div>
   </v-app>
 </template>

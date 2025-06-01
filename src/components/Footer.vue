@@ -14,8 +14,8 @@ const workingDays = ref('Понедельник - Пятница');
 const workingHours = ref('10:00 - 18:00');
 const socialLinks = ref([
   {
-    title: 'Email',
-    url: 'mailto:info@burspb.com',
+    title: 'info@burspb.com',
+    url: 'info@burspb.com',
     icon: 'fa fa-envelope'
   },
   {
@@ -30,8 +30,21 @@ const socialLinks = ref([
   }
 ]);
 
-const categoriesFooter = ref<any[]>([]);
-const mainNavFooter = ref<any[]>([]);
+interface CategoryItem {
+  nav_id: number;
+  title: string;
+  slug: string;
+  type: 'taxonomy' | 'post_type';
+}
+
+interface NavItem {
+  nav_id: number;
+  title: string;
+  slug: string;
+}
+
+const categoriesFooter = ref<CategoryItem[]>([]);
+const mainNavFooter = ref<NavItem[]>([]);
 
 const openModal = () => {
   isModalVisible.value = true;
@@ -61,9 +74,7 @@ const fetchGlobalData = async () => {
         workingHours.value = contact.working_hours || workingHours.value;
       }
       
-      if (response.data.social && Array.isArray(response.data.social)) {
-        socialLinks.value = response.data.social;
-      }
+      
       
       if (response.data.navigation && response.data.navigation.categories) {
         categoriesFooter.value = response.data.navigation.categories;
@@ -74,6 +85,7 @@ const fetchGlobalData = async () => {
       }
     }
   } catch (error) {
+    console.error('Ошибка при загрузке глобальных данных:', error);
   }
 };
 
@@ -81,7 +93,7 @@ onMounted(() => {
   fetchGlobalData();
 });
 
-const getCategoryPath = (category: any) => {
+const getCategoryPath = (category: CategoryItem) => {
   if (category.type === 'taxonomy') {
     return `/catalog/selection-${category.slug}`;
   } else if (category.type === 'post_type') {
@@ -90,7 +102,7 @@ const getCategoryPath = (category: any) => {
   return `/catalog/selection-${category.slug}`;
 };
 
-const getPagePath = (item: any) => {
+const getPagePath = (item: NavItem) => {
   const pageMap: Record<string, string> = {
     'garantiya': '/garantiya',
     'oplata': '/oplata',
@@ -129,7 +141,12 @@ const getPagePath = (item: any) => {
       <div class="row">
         <div class="column column--info">
           <div class="logo">
-            <RouterLink to="/"aria-current="page" class="nuxt-link-exact-active nuxt-link-active">
+            <RouterLink 
+              to="/" 
+              aria-current="page" 
+              aria-label="Главная страница"
+              class="nuxt-link-exact-active nuxt-link-active"
+            >
               <img :src="logoFooter" width="170" height="56" alt="Оборудование для бурения №1 в России" loading="lazy">
             </RouterLink>
           </div>
@@ -151,7 +168,13 @@ const getPagePath = (item: any) => {
             </a>
             <div class="phones__action">
               <span class="button-wrapper">
-                <button @click="openModal" class="button button--blue button button--unstyled">Заказать звонок</button>
+                <button 
+                  @click="openModal" 
+                  class="button button--blue button button--unstyled"
+                  aria-label="Заказать обратный звонок"
+                >
+                  Заказать звонок
+                </button>
               </span>
             </div>
             <ModalWindow :is-visible="isModalVisible"  @close="closeModal"></ModalWindow>
@@ -160,7 +183,11 @@ const getPagePath = (item: any) => {
           <div class="social social--footer">
             <ul>
               <li v-for="(link, index) in socialLinks" :key="index" class="social__item">
-                <a :href="link.url" target="_blank">
+                <a 
+                  :href="link.url" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
                   <span class="social__item__icon"><i :class="link.icon"></i></span>
                   <span class="social__item__title">{{ link.title }}</span>
                   <span class="accessibility">Вы можете связаться с нами посредством {{ link.title }}</span>
@@ -253,7 +280,7 @@ const getPagePath = (item: any) => {
           </nav>
         </div>
       </div>
-      
+
       <div class="row show-desktop-only">
         <div class="column column--left">
           <div class="address">
@@ -280,10 +307,44 @@ const getPagePath = (item: any) => {
           </div>
         </div>
       </div>
+      <div class="footer__policies">
+                <RouterLink to="/policy" class="footer__policy-link">Политика конфиденциальности</RouterLink>
+                <RouterLink to="/terms" class="footer__policy-link">Согласие на обработку персональных данных</RouterLink>
+                <RouterLink to="/cookie-policy" class="footer__policy-link">Политика обработки файлов Cookie</RouterLink>
+              </div>
+
     </div>
   </footer>
   
 </template>
 
-<style scoped>
+<style>
+
+.footer__policies {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.footer__policy-link  {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0cf;
+  text-decoration: underline;
+}
+
+.footer__policy-link:hover {
+  color: #000;
+  text-decoration: none;
+}
+
+
+@media (max-width: 768px) {
+  .footer__policies {
+    flex-direction: column;
+  }
+}
 </style>

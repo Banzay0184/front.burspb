@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import apiService from '../../../api/api';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PrivacyCheckbox from '../../../components/PrivacyCheckbox.vue';
 
 // Состояние формы
 const firstName = ref('');
@@ -11,6 +12,7 @@ const address = ref('');
 const weight = ref('');
 const phone = ref('');
 const inn = ref('');
+const privacyAccepted = ref(false);
 const showInnField = ref(false);
 const userType = ref('individual'); // individual или legal
 const paymentMethod = ref('cash'); // cash, card или bank
@@ -30,6 +32,7 @@ const weightError = ref(false);
 const phoneError = ref(false);
 const innError = ref(false);
 const phoneErrorMessage = ref('');
+const privacyError = ref(false);
 
 // Обработчик выбора типа пользователя
 const handleUserTypeChange = (type: string) => {
@@ -62,6 +65,7 @@ const handleSubmit = async (event: Event) => {
   innError.value = false;
   phoneErrorMessage.value = '';
   serverError.value = '';
+  privacyError.value = false;
   
   // Валидация
   let isValid = true;
@@ -109,6 +113,12 @@ const handleSubmit = async (event: Event) => {
     innError.value = true;
     isValid = false;
   }
+
+  // Проверка согласия с политикой
+  if (!privacyAccepted.value) {
+    privacyError.value = true;
+    isValid = false;
+  }
   
   // Если валидация прошла успешно, отправляем форму
   if (isValid) {
@@ -154,6 +164,7 @@ const resetForm = () => {
   weight.value = '';
   phone.value = '';
   inn.value = '';
+  privacyAccepted.value = false;
   userType.value = 'individual';
   paymentMethod.value = 'cash';
   showInnField.value = false;
@@ -166,6 +177,7 @@ const resetForm = () => {
   phoneError.value = false;
   innError.value = false;
   phoneErrorMessage.value = '';
+  privacyError.value = false;
 };
 
 // Создание новой заявки после успешной отправки
@@ -362,6 +374,12 @@ const handlePhoneError = (message: string) => {
                     <span class="checkbox__title">Карта</span>
                 </div>
             </div>
+
+            <PrivacyCheckbox
+              v-model="privacyAccepted"
+              :error="privacyError"
+            />
+
             <div class="form__row form__row--action">
               <button 
                 class="button button--blue button--cover"

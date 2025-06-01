@@ -3,7 +3,7 @@ import { createPinia } from 'pinia';
 import './style.css'
 import App from './App.vue'
 import router from './router/router'
-
+import { createHead } from '@vueuse/head'
 
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -20,9 +20,11 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 const pinia = createPinia()
+const head = createHead()
 
 app.use(router)
 app.use(vuetify)
 app.use(pinia)
+app.use(head)
 
 app.mount('#app')

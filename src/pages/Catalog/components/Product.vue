@@ -12,7 +12,6 @@ interface ProductProps {
   price: string;
   currency: string;
   availability: boolean;
-  isOrderable?: boolean;
   sku: string;
   weight: string;
   delivery: {
@@ -74,6 +73,7 @@ const props = withDefaults(defineProps<{
   })
 });
 
+    
 // Эмиты для событий
 const emit = defineEmits(['add-to-cart']);
 
@@ -95,14 +95,17 @@ const openModal = () => {
   isModalVisible.value = true;
 };
 
+
+
 // Закрыть модальное окно
 const closeModal = () => {
   isModalVisible.value = false;
 };
 
+
+
 // Добавить товар в корзину
 const addToCart = () => {
-  if (!props.productData.availability) return;
   
   if (isInCart.value) {
     // Если товар уже в корзине, увеличиваем количество
@@ -117,15 +120,14 @@ const addToCart = () => {
       articul: props.productData.sku,
       quantity: 1,
       slug: props.productData.slug,
-      available: true,
-      isOrderable: props.productData.isOrderable || false,
+      availability: props.productData.availability,
       weight: props.productData.weight
     });
   }
-  
-  // Сообщаем родительскому компоненту о добавлении товара
+
   emit('add-to-cart');
 };
+
 
 // Уменьшить количество товара
 const decreaseQuantity = () => {
@@ -163,6 +165,8 @@ const formattedPrice = computed(() => {
   }
   return price;
 });
+
+
 </script>
 
 <template>
@@ -184,15 +188,21 @@ const formattedPrice = computed(() => {
                             <link itemprop="availability" href="https://schema.org/InStock" />
                         </div>
                         <div class="product__meta__availability" 
-                             :class="{ 
-                               'available': productData.availability && !productData.isOrderable,
-                               'orderable': productData.isOrderable 
-                             }"
+                        :class="{
+                  'available': productData.availability,
+                  'orderable': productData.availability ,
+                  'unavailable': !productData.availability
+                }"
                         >
-                            <i class="fa" :class="productData.isOrderable ? 'fa-clock-o' : 'fa-check'"></i>
-                            <span>
-                                {{ productData.isOrderable ? 'Под заказ' : 'Есть в наличии' }}
-                            </span>
+                        <i class="fa" :class="{
+                  'fa-check': productData.availability === true,
+                  'fa-clock-o': productData.availability,
+                  'fa-times': !productData.availability
+                }"></i> 
+                <span>{{ 
+                  productData.availability === true  ? 'Есть в наличии' : 
+                  'Нет в наличии' 
+                }}</span>
                         </div>
                         <div class="product__meta__artikul">
                             <span class="product__meta__artikul__title">Артикул:</span> <span itemprop="sku" class="product__meta__artikul__value">{{ productData.sku }}</span>
@@ -222,7 +232,10 @@ const formattedPrice = computed(() => {
                                     class="button button--blue button--basket"
                                     @click="addToCart"
                                     :disabled="!productData.availability"
-                                  >В корзину</button>
+                                  >
+                                  В корзину
+                                {{productData.availability}}
+                                </button>
                                 </span>
                                 <div v-else class="basket__qty product__basket__qty">
                                   <span 

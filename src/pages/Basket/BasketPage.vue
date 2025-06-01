@@ -135,9 +135,9 @@ onUnmounted(() => {
                   <RouterLink :to="`/catalog/product-${item.slug}`" style="color: #006079; text-decoration: underline">
                     {{ item.title }}
                   </RouterLink>
-                  <span class="basket__list__item__cell--title-price">
-                    Цена за ед. <span>{{ getItemPrice(item) }}</span>
-                  </span>
+                  <div class="basket__list__item__cell--title-price">
+                    <span>Цена за ед. <span>{{ getItemTotalPrice(item) }}</span> ₽</span>
+                  </div>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--artikul">
                   <span class="basket__list__item__cell__title">Артикул:</span>

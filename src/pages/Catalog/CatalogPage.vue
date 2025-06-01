@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Pagination from '../../components/Pagination.vue';
 import SectionTitleFilter from '../../components/SectionTitleFilter.vue';
@@ -7,6 +8,11 @@ import Cards from '../../components/Cards.vue';
 import CategoriesFull from './components/CategoriesFull.vue';
 import { CartService } from '../../api/api';
 import { getApiUrl } from '../../api/api';
+import { useSeo } from '../../utils/seo';
+
+// Получаем роутер и текущий маршрут
+const route = useRoute();
+const router = useRouter();
 
 // Состояние компонента
 const cardsList = ref<any[]>([]);
@@ -24,6 +30,58 @@ const sortType = ref('price-asc');
 const priceMin = ref<string | null>(null);
 const priceMax = ref<string | null>(null);
 let fetchTimeout: number | null = null;
+
+// Инициализация параметров из URL
+const initParamsFromUrl = () => {
+  const page = Number(route.query.page) || 1;
+  const sort = route.query.sort as string || 'price-asc';
+  const min = route.query.price_min as string || null;
+  const max = route.query.price_max as string || null;
+
+  currentPage.value = page;
+  sortType.value = sort;
+  priceMin.value = min;
+  priceMax.value = max;
+};
+
+// Обновление URL при изменении параметров
+const updateUrl = () => {
+  const query: Record<string, string> = {};
+  
+  if (currentPage.value > 1) {
+    query.page = currentPage.value.toString();
+  }
+  
+  if (sortType.value !== 'price-asc') {
+    query.sort = sortType.value;
+  }
+  
+  if (priceMin.value) {
+    query.price_min = priceMin.value;
+  }
+  
+  if (priceMax.value) {
+    query.price_max = priceMax.value;
+  }
+
+  // Обновляем URL без перезагрузки страницы
+  router.replace({ 
+    path: route.path,
+    query: Object.keys(query).length ? query : undefined
+  });
+};
+
+// Следим за изменениями параметров
+watch([currentPage, sortType, priceMin, priceMax], () => {
+  updateUrl();
+});
+
+// Устанавливаем SEO мета-теги
+useSeo({
+  title: 'Каталог продукции - Буровые технологии',
+  description: 'Каталог бурового оборудования и инструментов. Широкий выбор качественного оборудования для бурения от компании Буровые технологии.',
+  canonical: route.fullPath
+});
 
 // Функция для запроса данных с API
 const fetchProducts = async () => {
@@ -94,8 +152,7 @@ const fetchProducts = async () => {
         link: `/catalog/product-${product.slug}`,
         image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
         alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        available: true,
-        isOrderable: !product.meta?.availability,
+        availability: product.meta.availability || null,
         articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
@@ -160,15 +217,15 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        available: true,
-        isOrderable: product.isOrderable || false
+        availability: product.availability || null,
       });
     }
   }
 };
 
-// Загружаем данные при монтировании компонента
+// Инициализация при монтировании
 onMounted(() => {
+  initParamsFromUrl();
   fetchProducts();
 });
 

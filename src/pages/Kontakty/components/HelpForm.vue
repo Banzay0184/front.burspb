@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import apiService from '../../../api/api';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PrivacyCheckbox from '../../../components/PrivacyCheckbox.vue';
 
 // Состояния для данных
 const title = ref('Остались вопросы?');
@@ -14,6 +15,7 @@ const name = ref('');
 const email = ref('');
 const phone = ref('');
 const message = ref('');
+const privacyAccepted = ref(false);
 
 // Состояния для обработки формы
 const submitInProgress = ref(false);
@@ -27,6 +29,7 @@ const emailError = ref(false);
 const phoneError = ref(false);
 const messageError = ref(false);
 const phoneErrorMessage = ref('');
+const privacyError = ref(false);
 
 // Получение данных из API
 const fetchHelpData = async () => {
@@ -63,6 +66,7 @@ const handleSubmit = async (event: Event) => {
   messageError.value = false;
   phoneErrorMessage.value = '';
   serverError.value = '';
+  privacyError.value = false;
   
   // Валидация
   let isValid = true;
@@ -93,6 +97,12 @@ const handleSubmit = async (event: Event) => {
   // Проверка сообщения
   if (!message.value.trim()) {
     messageError.value = true;
+    isValid = false;
+  }
+
+  // Проверка согласия с политикой
+  if (!privacyAccepted.value) {
+    privacyError.value = true;
     isValid = false;
   }
   
@@ -133,6 +143,7 @@ const resetForm = (resetAll = true) => {
   email.value = '';
   phone.value = '';
   message.value = '';
+  privacyAccepted.value = false;
   
   if (resetAll) {
     showSuccess.value = false;
@@ -145,6 +156,7 @@ const resetForm = (resetAll = true) => {
   messageError.value = false;
   phoneErrorMessage.value = '';
   serverError.value = '';
+  privacyError.value = false;
 };
 
 // Создание новой заявки после успешной отправки
@@ -249,6 +261,12 @@ onMounted(() => {
                                   @input="clearMessageError"
                                 ></textarea>
                             </div>
+
+                            <PrivacyCheckbox
+                              v-model="privacyAccepted"
+                              :error="privacyError"
+                            />
+
                             <div class="form__row form__row--action">
                               <button 
                                 type="submit" 

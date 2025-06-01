@@ -233,8 +233,7 @@ const fetchCategoryData = async () => {
           link: `/catalog/product-${product.slug}`,
           image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
           alt: product.img?.alt?.description || product.title || 'Изображение товара',
-          available: true,
-          isOrderable: !product.meta?.availability,
+          availability: product.meta?.availability || null,
           articul: product.meta?.artikul || '',
           oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
           currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
@@ -293,8 +292,7 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        available: true,
-        isOrderable: product.isOrderable || false,
+        availability: product.availability || null,
         weight: product.weight
       });
     }

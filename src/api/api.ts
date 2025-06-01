@@ -75,6 +75,7 @@ export interface Product {
   content: string;
   price: number;
   image: string;
+  availability: boolean;
   // Дополнительные поля по необходимости
 }
 
@@ -106,6 +107,7 @@ export interface Post {
     priority_category: string;
     read_time: string | null;
     views: number;
+    availability: boolean;
   };
   excerpt: string | null;
   blocks?: {
@@ -477,9 +479,8 @@ interface CartItem {
   articul: string;
   quantity: number;
   slug: string;
-  available: boolean;
-  isOrderable: boolean; // Флаг для товаров "Под заказ"
-  weight?: string; // Вес товара (опциональное поле)
+  weight?: string; 
+  availability?: boolean;
 }
 
 // Класс для управления корзиной с использованием localStorage
