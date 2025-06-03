@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 interface NavItem {
@@ -45,6 +46,36 @@ const fetchGlobalData = async () => {
   } catch (error) {
   }
 };
+
+// Создаем микроразметку для навигации
+const navigationSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'SiteNavigationElement',
+  'name': 'Главное меню',
+  'description': 'Основная навигация сайта',
+  'mainEntity': {
+    '@type': 'ItemList',
+    'itemListElement': navItems.value.map((item, index) => ({
+      '@type': 'ListItem',
+      'position': index + 1,
+      'item': {
+        '@type': 'WebPage',
+        'name': item.title,
+        'url': getRoutePath(item.slug)
+      }
+    }))
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(navigationSchema.value)
+    }
+  ]
+});
 
 onMounted(() => {
   fetchGlobalData();

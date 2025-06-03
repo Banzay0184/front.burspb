@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useHead } from '@vueuse/head';
 import Benefits from '../components/Benefits.vue';
 import Cover from '../components/Cover.vue';
 import Gratitude from '../components/Gratitude.vue';
@@ -21,6 +22,57 @@ const error = ref<string | null>(null);
 const showNotification = ref(false);
 const notificationMessage = ref('');
 const notificationTimeout = ref<number | null>(null);
+
+// Микроразметка Schema.org
+const websiteSchema = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Burspb",
+  "url": "https://burspb.ru",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://burspb.ru/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}));
+
+const productsSchema = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": cardsList.value.map((item, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "item": {
+      "@type": "Product",
+      "name": item.title,
+      "image": item.image,
+      "description": item.alt,
+      "sku": item.articul,
+      "offers": {
+        "@type": "Offer",
+        "price": item.currentPrice.replace(/[^\d]/g, ''),
+        "priceCurrency": "RUB",
+        "availability": item.availability ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+      }
+    }
+  }))
+}));
+
+// Обновляем микроразметку при изменении данных
+watch([websiteSchema, productsSchema], ([website, products]) => {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify(website)
+      },
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify(products)
+      }
+    ]
+  });
+}, { immediate: true });
 
 // Функция для запроса популярных продуктов с API
 const fetchPopularProducts = async () => {
@@ -50,7 +102,7 @@ const fetchPopularProducts = async () => {
         link: `/catalog/product-${product.slug}`,
         image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
         alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        availability: product.meta?.availability || null,
+        availability: product.meta?.availability || false,
         articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
@@ -125,7 +177,7 @@ const addToCart = (id: number) => {
         articul: product.articul || '',
         quantity: 1,
         slug: product.slug,
-        availability: product.availability || null,
+        availability: product.availability || false,
         weight: product.weight || ''
       });
       showNotificationMessage(`Товар "${product.title}" добавлен в корзину`);

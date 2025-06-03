@@ -1,19 +1,10 @@
+# Общие правила для всех роботов
 User-agent: *
-Allow: /
-Allow: /catalog/
-Allow: /statji/
-Allow: /garantiya/
-Allow: /oplata/
-Allow: /dostavka/
-Allow: /okompanii/
-
-# Запрещаем индексацию корзины и форм
+Disallow: /catalog/*/page/
 Disallow: /basket/
 Disallow: /confirm/
 Disallow: /search/
 Disallow: /*?*
-
-# Запрещаем индексацию служебных страниц
 Disallow: /api/
 Disallow: /admin/
 Disallow: /wp-admin/
@@ -21,8 +12,6 @@ Disallow: /wp-login.php
 Disallow: /wp-includes/
 Disallow: /wp-content/plugins/
 Disallow: /wp-content/themes/
-
-# Запрещаем индексацию системных файлов
 Disallow: /*.json$
 Disallow: /*.xml$
 Disallow: /*.txt$
@@ -38,16 +27,39 @@ Disallow: /*.woff2$
 Disallow: /*.eot$
 Disallow: /*.svg$
 Disallow: /*.ico$
-
-# Разрешаем индексацию изображений
+Allow: /catalog/
+Allow: /statji/
+Allow: /garantiya/
+Allow: /oplata/
+Allow: /dostavka/
+Allow: /okompanii/
 Allow: /*.jpg$
 Allow: /*.jpeg$
 Allow: /*.gif$
 Allow: /*.png$
 Allow: /*.webp$
 
+# Специальные правила для Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 5
+
+# Специальные правила для Yandex
+User-agent: Yandexbot
+Allow: /
+Crawl-delay: 5
+
+# Правила для мобильных ботов
+User-agent: Googlebot-Mobile
+Allow: /
+Crawl-delay: 5
+
+User-agent: YandexMobileBot
+Allow: /
+Crawl-delay: 5
+
 # Указываем расположение sitemap
 Sitemap: https://burspb.com/sitemap.xml
 
-# Указываем задержку между запросами
-Crawl-delay: 10 
+# Указываем задержку между запросами для остальных ботов
+Crawl-delay: 10

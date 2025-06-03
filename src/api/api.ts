@@ -480,7 +480,7 @@ interface CartItem {
   quantity: number;
   slug: string;
   weight?: string; 
-  availability?: boolean;
+  availability: boolean;
 }
 
 // Класс для управления корзиной с использованием localStorage

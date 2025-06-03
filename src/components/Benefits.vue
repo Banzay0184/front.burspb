@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 interface BenefitItem {
@@ -40,6 +41,33 @@ const fetchBenefits = async () => {
 
 onMounted(() => {
   fetchBenefits();
+});
+
+// Создаем микроразметку для преимуществ компании
+const benefitsSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'БурСПб',
+  description: 'Компания БурСПб - лидер в области бурового оборудования',
+  makesOffer: benefits.value.map(benefit => ({
+    '@type': 'Offer',
+    itemOffered: {
+      '@type': 'Service',
+      name: benefit.title,
+      description: benefit.description,
+      image: benefit.icon
+    }
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(benefitsSchema.value)
+    }
+  ]
 });
 </script>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 
 const props = defineProps<{
   tabs: Array<{ title: string; active: boolean }>;
@@ -11,6 +12,33 @@ const activeTabIndex = ref(props.tabs.findIndex(tab => tab.active));
 const setActiveTab = (index: number) => {
   activeTabIndex.value = index;
 };
+
+// Создаем микроразметку для вкладок
+const tabsSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'itemListElement': props.tabs.map((tab, index) => ({
+    '@type': 'ListItem',
+    'position': index + 1,
+    'name': tab.title,
+    'description': props.description[index]?.join(' ') || '',
+    'item': {
+      '@type': 'WebPage',
+      'name': tab.title,
+      'description': props.description[index]?.join(' ') || ''
+    }
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(tabsSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

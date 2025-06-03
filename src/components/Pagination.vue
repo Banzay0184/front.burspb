@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 
 defineOptions({
   name: 'Pagination'
@@ -77,6 +78,54 @@ const handlePageChange = (page: number) => {
 const getPageUrl = (page: number) => {
   return page === 1 ? props.baseUrl : `${props.baseUrl}/page/${page}`;
 };
+
+// Создаем микроразметку для пагинации
+const paginationSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `Страница ${props.currentPage} из ${props.totalPages}`,
+  pageStart: props.currentPage,
+  pageEnd: props.currentPage,
+  numberOfItems: props.totalPages,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'БурСПб',
+    url: 'https://burspb.ru'
+  },
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Главная',
+        item: 'https://burspb.ru'
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: props.baseUrl.replace('/', ''),
+        item: `https://burspb.ru${props.baseUrl}`
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: `Страница ${props.currentPage}`,
+        item: `https://burspb.ru${getPageUrl(props.currentPage)}`
+      }
+    ]
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(paginationSchema.value)
+    }
+  ]
+});
 </script>
 
 

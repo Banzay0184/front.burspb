@@ -1,7 +1,49 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
+
 defineOptions({
     name: 'CookiePolicyPage.vue'
-})
+});
+
+// Создаем микроразметку для страницы политики использования файлов cookie
+const cookiePolicySchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Политика обработки файлов Cookie',
+  'description': 'Политика обработки файлов cookie и аналогичных технологий на сайте ООО "БурТехСнаб"',
+  'mainEntity': {
+    '@type': 'Article',
+    'headline': 'Политика обработки файлов Cookie',
+    'datePublished': '2023-01-01',
+    'dateModified': '2023-01-01',
+    'author': {
+      '@type': 'Organization',
+      'name': 'ООО "БурТехСнаб"',
+      'email': 'info@burtehsnab.ru',
+      'telephone': '+7XXXXXXXXXX'
+    },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'ООО "БурТехСнаб"',
+      'logo': {
+        '@type': 'ImageObject',
+        'url': '/image/7dd5a8.svg'
+      }
+    },
+    'articleBody': 'Настоящая Политика обработки файлов cookie (далее — "Политика") объясняет, как ООО "БурТехСнаб" (далее — "Компания") использует файлы cookie и аналогичные технологии на нашем сайте.'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(cookiePolicySchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

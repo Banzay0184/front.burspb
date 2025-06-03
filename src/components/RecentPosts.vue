@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 interface Article {
@@ -64,6 +65,41 @@ const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('ru-RU');
 };
+
+// Создаем микроразметку для блога и статей
+const blogSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: sectionTitle.value,
+  description: 'Блог компании БурСПб о буровом оборудовании и технологиях',
+  blogPost: articles.value.map(article => ({
+    '@type': 'BlogPosting',
+    headline: article.title,
+    image: article.image,
+    datePublished: article.date,
+    author: {
+      '@type': 'Person',
+      name: article.author
+    },
+    description: article.description,
+    wordCount: article.readTime,
+    url: article.url,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': article.url
+    }
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(blogSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

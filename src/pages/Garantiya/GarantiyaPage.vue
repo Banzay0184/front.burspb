@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Form from './components/Form.vue';
@@ -13,6 +14,44 @@ const breadcrumbs = computed(() => [
   { title: 'Главная', url: '/' },
   { title: 'Гарантия', url: '', isCurrent: true }
 ]);
+
+// Создаем микроразметку для страницы гарантии
+const warrantySchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Гарантия',
+  'description': 'Информация о гарантийном обслуживании оборудования для бурения',
+  'mainEntity': {
+    '@type': 'Service',
+    'name': 'Гарантийное обслуживание',
+    'provider': {
+      '@type': 'Organization',
+      'name': 'ООО ГК "Буровые технологии"',
+      'description': 'Весь ассортимент каталога компании сертифицирован заводами производителей и имеет гарантию'
+    },
+    'serviceType': 'Гарантийное обслуживание',
+    'areaServed': 'Российская Федерация',
+    'description': 'В случае возникновения гарантийного случая с оборудованием обратитесь в компанию по контактным номерам телефона или почте, либо заполните форму на этой странице. Наши сотрудники свяжутся с вами для уточнения всех деталей и обстоятельств и в кратчайшие сроки примут все необходимые действия для скорейшего ремонта или обмена товара ненадлежащего качества.',
+    'offers': {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Гарантийный ремонт',
+        'description': 'Ремонт или обмен товара ненадлежащего качества'
+      }
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(warrantySchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

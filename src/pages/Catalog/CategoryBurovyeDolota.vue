@@ -40,7 +40,7 @@ const categoryTitle = ref('Товары каталога');
 const totalPages = ref(1);
 
 // Параметры фильтрации и сортировки
-const sortParam = ref('price-asc');
+const sortParam = ref('popularity-desc');
 const minPrice = ref<string | null>(null);
 const maxPrice = ref<string | null>(null);
 
@@ -166,43 +166,30 @@ const breadcrumbs = computed(() => {
 
 // Загрузка данных категории
 const fetchCategoryData = async () => {
-  if (isLoading.value) return;
-  
-  isLoading.value = true;
-  error.value = null;
-  
   try {
-    const params = new URLSearchParams();
-    params.append('page', currentPage.value.toString());
-    params.append('sort', sortParam.value);
-    
+    isLoading.value = true;
+    error.value = null;
+
+    // Формируем параметры запроса
+    const params = new URLSearchParams({
+      page: currentPage.value.toString(),
+      sort: sortParam.value,
+      posts_per_page: '24'
+    });
+
     if (minPrice.value) {
-      params.append('min_price', minPrice.value);
+      params.append('price_min', minPrice.value);
     }
     if (maxPrice.value) {
-      params.append('max_price', maxPrice.value);
+      params.append('price_max', maxPrice.value);
     }
 
-    const currentSlug = categorySlug.value;
-    const withoutPrefix = currentSlug.replace(/^(selection-|category-)/, '');
-    
-    // Определяем, является ли это подкатегорией с размером
-    const isSize = isSizeSubcategory(currentSlug);
-
-    // Формируем правильный URL для API
-    let apiUrl;
-    if (isSize) {
-      // Для подкатегорий с размером используем /selections/slug/
-      apiUrl = getApiUrl(`selections/slug/${withoutPrefix}?${params.toString()}`);
-    } else {
-      // Для обычных категорий используем /category/slug/
-      apiUrl = getApiUrl(`category/slug/${currentSlug}?${params.toString()}`);
-    }
-    
-    
-    const response = await fetch(apiUrl);
+    const response = await fetch(`${getApiUrl()}/category/${categorySlug.value}?${params.toString()}`);
     const data = await response.json();
-    
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Ошибка при загрузке категории');
+    }
 
     if (data) {
       categoryData.value = data;
@@ -233,13 +220,14 @@ const fetchCategoryData = async () => {
           link: `/catalog/product-${product.slug}`,
           image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
           alt: product.img?.alt?.description || product.title || 'Изображение товара',
-          availability: product.meta?.availability || null,
+          availability: product.meta?.availability || false,
           articul: product.meta?.artikul || '',
           oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
           currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
           showOldPrice: !!product.meta?.price_old,
           slug: product.slug || '',
-          weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
+          weight: product.meta?.weight ? `${product.meta.weight} кг` : '',
+          views: product.meta?.views || 0
         }));
       } else {
         cardsList.value = [];
@@ -268,10 +256,19 @@ const handleSortChange = (value: string) => {
 
 // Обработчик изменения фильтра цены
 const handlePriceFilterChange = (min: string | null, max: string | null) => {
+  // Сохраняем текущую позицию скролла
+  const scrollPosition = window.scrollY;
+  
   minPrice.value = min;
   maxPrice.value = max;
-  // Временно отключено для отладки
-  // fetchCategoryData();
+  
+  // Вызываем fetchCategoryData с сохранением позиции скролла
+  fetchCategoryData().then(() => {
+    // Восстанавливаем позицию скролла после обновления DOM
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
+  });
 };
 
 // Обработка добавления в корзину
@@ -292,7 +289,7 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        availability: product.availability || null,
+        availability: product.availability || false,
         weight: product.weight
       });
     }

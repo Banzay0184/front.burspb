@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useHead } from '@vueuse/head';
+import { computed } from 'vue';
+
 interface BreadcrumbItem {
   title: string;
   url?: string;
@@ -7,7 +10,7 @@ interface BreadcrumbItem {
   type?: string;
 }
 
-defineProps<{
+const props = defineProps<{
   items?: BreadcrumbItem[];
 }>();
 
@@ -15,18 +18,36 @@ const getBreadcrumbUrl = (item: BreadcrumbItem) => {
   if (item.isCurrent) return '';
   if (item.url) return item.url;
   if (item.slug) {
-
     if (item.slug.startsWith('category-') || item.slug.startsWith('selection-')) {
       return `/catalog/${item.slug}`;
     }
-
     const prefix = item.type === 'taxonomy' ? 'category' : 'selection';
     return `/catalog/${prefix}-${item.slug}`;
   }
   return '';
 };
 
+// Создаем микроразметку для хлебных крошек
+const breadcrumbSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: props.items?.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.title,
+    item: item.isCurrent ? window.location.href : `https://burspb.ru${getBreadcrumbUrl(item)}`
+  })) || []
+}));
 
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(breadcrumbSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

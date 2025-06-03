@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 import ModalWindow from './ModalWindow.vue';
 
@@ -25,6 +26,44 @@ const fetchGlobalData = async () => {
   } catch (error) {
   }
 };
+
+// Создаем микроразметку для контактной информации
+const contactSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  'name': 'Оборудование для бурения №1 в России',
+  'contactPoint': [
+    {
+      '@type': 'ContactPoint',
+      'telephone': `+${phone.value.replace(/\s/g, '')}`,
+      'contactType': 'customer service',
+      'areaServed': 'СПБ-Юг',
+      'availableLanguage': 'Russian'
+    },
+    {
+      '@type': 'ContactPoint',
+      'telephone': `+${phoneAlt.value.replace(/\s/g, '')}`,
+      'contactType': 'customer service',
+      'areaServed': 'СПБ-Север',
+      'availableLanguage': 'Russian'
+    }
+  ],
+  'address': {
+    '@type': 'PostalAddress',
+    'addressCountry': 'RU',
+    'addressRegion': 'Санкт-Петербург'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(contactSchema.value)
+    }
+  ]
+});
 
 onMounted(() => {
   fetchGlobalData();

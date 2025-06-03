@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import PhoneInput from './PhoneInput.vue';
 import apiService from '../api/api';
 import PrivacyCheckbox from './PrivacyCheckbox.vue';
@@ -19,6 +20,48 @@ const showSuccess = ref(false);
 const submitInProgress = ref(false);
 const successMessage = ref('');
 const serverError = ref('');
+
+// Создаем микроразметку для формы заказа
+const formSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Заказать звонок',
+  description: 'Форма заказа обратного звонка от компании БурСПб',
+  mainEntity: {
+    '@type': 'WebPageElement',
+    name: 'Форма заказа звонка',
+    description: 'Форма для заказа обратного звонка от специалистов компании БурСПб',
+    form: {
+      '@type': 'Form',
+      name: 'Форма заказа звонка',
+      description: 'Заполните форму для заказа обратного звонка',
+      formElement: [
+        {
+          '@type': 'FormElement',
+          name: 'Имя',
+          required: true,
+          inputType: 'text'
+        },
+        {
+          '@type': 'FormElement',
+          name: 'Телефон',
+          required: true,
+          inputType: 'tel'
+        }
+      ]
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(formSchema.value)
+    }
+  ]
+});
 
 const handleSubmit = async () => {
   // Сбрасываем ошибки перед валидацией

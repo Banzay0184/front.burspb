@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 interface PartnershipStep {
@@ -44,6 +45,31 @@ const fetchPartnershipSteps = async () => {
     isLoading.value = false;
   }
 };
+
+// Создаем микроразметку для шагов партнерства
+const partnershipSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: title.value,
+  description: 'Пошаговая инструкция по сотрудничеству с компанией БурСПб',
+  step: steps.value.map(step => ({
+    '@type': 'HowToStep',
+    name: step.title,
+    text: step.description,
+    image: step.image,
+    position: step.id
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(partnershipSchema.value)
+    }
+  ]
+});
 
 onMounted(() => {
   fetchPartnershipSteps();

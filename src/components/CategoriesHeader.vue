@@ -59,7 +59,7 @@ const fetchGlobalData = async () => {
       
       // Добавляем корзину в конец списка
       categories.value.push({
-        href: '/Basket/BasketPage',
+        href: '/basket',
         iconSrc: getIconPath('icon-basket'),
         iconAlt: 'Перейти в корзину',
         title: 'Корзина',

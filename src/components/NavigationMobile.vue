@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useHead } from '@vueuse/head';
 import apiService from "../api/api";
 
 const emit = defineEmits(["close"]);
@@ -63,6 +64,41 @@ const getCategoryPath = (category: any) => {
   }
    return `/catalog/category-${category.slug}`;
 };
+
+// Создаем микроразметку для мобильной навигации
+const mobileNavigationSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'SiteNavigationElement',
+  'name': 'Мобильное меню',
+  'description': 'Мобильная навигация сайта',
+  'mainEntity': {
+    '@type': 'ItemList',
+    'itemListElement': categoriesFull.value.map((category, index) => ({
+      '@type': 'ListItem',
+      'position': index + 1,
+      'item': {
+        '@type': 'WebPage',
+        'name': category.title,
+        'url': getCategoryPath(category),
+        'description': category.description || '',
+        'isPartOf': {
+          '@type': 'WebSite',
+          'name': 'Каталог товаров'
+        }
+      }
+    }))
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(mobileNavigationSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

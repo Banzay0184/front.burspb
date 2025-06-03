@@ -18,6 +18,99 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const breadcrumbs = ref<any[]>([]);
 
+// Добавляем computed свойство для микроразметки
+const productSchema = computed(() => {
+  if (!productData.value) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: productData.value.title,
+    image: productData.value.image,
+    description: productData.value.description[0][0],
+    sku: productData.value.sku,
+    mpn: productData.value.sku,
+    brand: {
+      '@type': 'Brand',
+      name: 'БУРСПБ'
+    },
+    offers: {
+      '@type': 'Offer',
+      price: parseFloat(productData.value.price),
+      priceCurrency: 'RUB',
+      availability: productData.value.availability 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/OutOfStock',
+      url: window.location.href,
+      seller: {
+        '@type': 'Organization',
+        name: 'БУРСПБ',
+        url: window.location.origin
+      },
+      deliveryTime: {
+        '@type': 'ShippingDeliveryTime',
+        handlingTime: {
+          '@type': 'QuantitativeValue',
+          minValue: 0,
+          maxValue: 1,
+          unitCode: 'DAY'
+        },
+        transitTime: {
+          '@type': 'QuantitativeValue',
+          minValue: 0,
+          maxValue: 1,
+          unitCode: 'DAY'
+        }
+      },
+      priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+    },
+    weight: {
+      '@type': 'QuantitativeValue',
+      value: parseFloat(productData.value.weight),
+      unitText: 'kg'
+    },
+    category: 'Буровые долота',
+    manufacturer: {
+      '@type': 'Organization',
+      name: 'БУРСПБ',
+      url: window.location.origin
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '5',
+      reviewCount: '1',
+      bestRating: '5',
+      worstRating: '1'
+    },
+    review: {
+      '@type': 'Review',
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: '5',
+        bestRating: '5'
+      },
+      author: {
+        '@type': 'Organization',
+        name: 'БУРСПБ'
+      },
+      datePublished: new Date().toISOString().split('T')[0],
+      reviewBody: 'Отличный продукт высокого качества'
+    },
+    additionalProperty: [
+      {
+        '@type': 'PropertyValue',
+        name: 'Артикул',
+        value: productData.value.sku
+      },
+      {
+        '@type': 'PropertyValue',
+        name: 'Вес',
+        value: productData.value.weight
+      }
+    ]
+  };
+});
+
 // Загрузка данных о продукте из API
 const fetchProductData = async () => {
   if (!productSlug.value) return;
@@ -35,6 +128,7 @@ const fetchProductData = async () => {
     
     const data = await response.json();
     
+    
     // Формируем данные продукта в нужном формате
     const product = data.product || data;
     
@@ -44,7 +138,7 @@ const fetchProductData = async () => {
       image: product.img?.webp_full || product.img?.full || '',
       price: product.meta?.price || '0',
       currency: 'RUB',
-      availability: product.meta?.availability || false,
+      availability: product.meta.availability || false,
       sku: product.meta?.artikul || '',
       weight: product.meta?.weight ? `${product.meta.weight} кг` : 'Не указан',
       delivery: {
@@ -106,7 +200,7 @@ const fetchProductData = async () => {
         link: `/catalog/product-${product.slug}`,
         image: product.img?.webp_square_350 || product.img?.square_350 || '',
         alt: product.img?.alt?.description || product.title,
-        availability: product.meta?.availability || null,
+        availability: product.meta.availability || false,
         articul: product.meta?.artikul || '',
         oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
         currentPrice: `${product.meta.price} ₽`,
@@ -138,7 +232,7 @@ const addToCart = (id: number) => {
       articul: product.articul,
       quantity: 1,
       slug: product.slug,
-      availability: product.availability,
+      availability: product.availability || false,
       weight: product.weight,
     });
   }
@@ -190,6 +284,14 @@ onUnmounted(() => {
 
 <template>
 <main class="main">
+    <!-- Добавляем микроразметку -->
+      <component
+        :is="'script'"
+        type="application/ld+json"
+        v-if="productSchema"
+        v-html="JSON.stringify(productSchema, null, 2)"
+      />
+
     
     <Breadcrumbs :items="breadcrumbs" /> 
 

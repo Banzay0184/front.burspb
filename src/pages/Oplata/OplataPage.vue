@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 
@@ -12,6 +13,62 @@ const breadcrumbs = computed(() => [
   { title: 'Главная', url: '/' },
   { title: 'Оплата', url: '', isCurrent: true }
 ]);
+
+// Создаем микроразметку для страницы оплаты
+const paymentSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Оплата',
+  'description': 'Информация о способах оплаты в интернет-магазине оборудования для бурения',
+  'mainEntity': {
+    '@type': 'Service',
+    'name': 'Способы оплаты',
+    'provider': {
+      '@type': 'Organization',
+      'name': 'ООО ГК "Буровые технологии"'
+    },
+    'offers': {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Оплата заказа',
+        'description': 'Различные способы оплаты заказа'
+      },
+      'availableDeliveryMethod': [
+        {
+          '@type': 'PaymentMethod',
+          'name': 'Наличными'
+        },
+        {
+          '@type': 'PaymentMethod',
+          'name': 'Безналичный расчет'
+        },
+        {
+          '@type': 'PaymentMethod',
+          'name': 'Наложенный платеж'
+        },
+        {
+          '@type': 'PaymentMethod',
+          'name': 'На карту Сбербанка'
+        },
+        {
+          '@type': 'PaymentMethod',
+          'name': 'Терминал'
+        }
+      ]
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(paymentSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

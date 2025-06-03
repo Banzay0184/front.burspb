@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import { CartService } from '../api/api'
 
 interface Card {
@@ -8,12 +9,22 @@ interface Card {
   link: string
   image: string
   alt: string
-  availability: boolean
+  availability: boolean 
   articul: string
   oldPrice: string
   currentPrice: string
   showOldPrice?: boolean
   slug: string
+  views: number
+}
+
+interface Offers {
+  '@type': string;
+  availability: string;
+  price: number;
+  priceCurrency: string;
+  url: string;
+  priceValidUntil?: string;
 }
 
 const props = defineProps({
@@ -28,6 +39,10 @@ const props = defineProps({
   loadMore: {
     type: Boolean,
     default: false
+  },
+  sortBy: {
+    type: String,
+    default: 'price-asc'
   }
 })
 
@@ -36,6 +51,90 @@ const emit = defineEmits(['add-to-cart'])
 const cards = ref<Card[]>([...props.initialCards])
 const isLoading = ref(false)
 const hasMoreCards = ref(props.additionalCards.length > 0)
+
+// Функция сортировки карточек
+const sortCards = (cards: Card[], sortBy: string) => {
+  const sortedCards = [...cards];
+  
+  switch (sortBy) {
+    case 'popularity-desc':
+      return sortedCards.sort((a, b) => b.views - a.views);
+    case 'popularity-asc':
+      return sortedCards.sort((a, b) => a.views - b.views);
+    case 'price-asc':
+      return sortedCards.sort((a, b) => {
+        const priceA = parseFloat(a.currentPrice.replace(/[^\d.]/g, '')) || 0;
+        const priceB = parseFloat(b.currentPrice.replace(/[^\d.]/g, '')) || 0;
+        return priceA - priceB;
+      });
+    case 'price-desc':
+      return sortedCards.sort((a, b) => {
+        const priceA = parseFloat(a.currentPrice.replace(/[^\d.]/g, '')) || 0;
+        const priceB = parseFloat(b.currentPrice.replace(/[^\d.]/g, '')) || 0;
+        return priceB - priceA;
+      });
+    case 'name-asc':
+      return sortedCards.sort((a, b) => a.title.localeCompare(b.title));
+    case 'name-desc':
+      return sortedCards.sort((a, b) => b.title.localeCompare(a.title));
+    default:
+      return sortedCards;
+  }
+};
+
+// Следим за изменением сортировки
+watch(() => props.sortBy, (newSortBy) => {
+  cards.value = sortCards(cards.value, newSortBy);
+}, { immediate: true });
+
+// Компонент для микроразметки Schema.org
+const ProductSchema = (card: Card) => {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: card.title,
+    image: card.image,
+    description: card.alt,
+    sku: card.articul,
+    mpn: card.articul,
+    url: card.link,
+    offers: {
+      '@type': 'Offer',
+      availability: card.availability 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/PreOrder',
+      price: parseFloat(card.currentPrice.replace(/[^\d.]/g, '')),
+      priceCurrency: 'RUB',
+      url: card.link,
+      priceValidUntil: card.oldPrice ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined
+    } as Offers
+  }
+
+  return schema
+}
+
+// Создаем микроразметку для всех карточек
+const cardsSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'itemListElement': cards.value.map((card, index) => ({
+    '@type': 'ListItem',
+    'position': index + 1,
+    'item': ProductSchema(card)
+  }))
+}));
+
+// Обновляем микроразметку при изменении карточек
+watch(cardsSchema, (schema) => {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify(schema)
+      }
+    ]
+  });
+}, { immediate: true });
 
 // Форматирование цены
 const formatPrice = (price: string) => {
@@ -49,8 +148,6 @@ const formatPrice = (price: string) => {
 const addToCart = (card: Card) => {
   emit('add-to-cart', card.id);
 }
-
-console.log(cards);
 
 
 // Проверяем, есть ли товар в корзине
@@ -73,6 +170,8 @@ const decreaseQuantity = (id: number) => {
   const currentQuantity = CartService.getItemQuantity(id);
   if (currentQuantity > 1) {
     CartService.updateItemQuantity(id, currentQuantity - 1);
+  } else {
+    CartService.removeFromCart(id);
   }
 }
 
@@ -141,19 +240,16 @@ onUnmounted(() => {
               <div 
                 class="card__meta__availability" 
                 :class="{
-                  'available': card.availability,
-                  'orderable': card.availability ,
-                  'unavailable': !card.availability
+                  'available': card.availability === true,
                 }"
               >
                 <i class="fa" :class="{
                   'fa-check': card.availability === true,
-                  'fa-clock-o': card.availability,
-                  'fa-times': !card.availability
+                  'fa-clock-o': card.availability ===  false
                 }"></i> 
                 <span>{{ 
                   card.availability === true  ? 'Есть в наличии' : 
-                  'Нет в наличии' 
+                  'Под заказ' 
                 }}</span>
               </div>
               <div class="card__meta__artikul">
@@ -182,11 +278,10 @@ onUnmounted(() => {
                 <button 
                   v-if="!isInCart(card.id)"
                   @click="addToCart(card)" 
-                  class="button button--blue button--basket"
-                  :disabled="!card.availability"
+                  class="button button--blue button--bsket"
+                  :disabled="card.availability === false"
                 >
-                  <!-- В корзину -->
-                  {{ card.availability }}
+                  В корзину
                 </button>
                 
                 <div v-else class="in-cart-controls">
@@ -223,7 +318,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-
 .card__meta__artikul {
     display: flex;
     gap: 2px;

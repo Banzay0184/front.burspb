@@ -6,6 +6,8 @@ import NavigationQuick from './components/NavigationQuick.vue';
 import apiService from './api/api';
 import { RouterView } from 'vue-router';
 import CookieBanner from './components/CookieBanner.vue';
+import MetaTagsManager from './components/MetaTagsManager.vue';
+import MetaManager from './components/MetaManager.vue';
 
 const favicon = ref('/favicon.ico'); // Значение по умолчанию
 
@@ -40,6 +42,8 @@ onMounted(() => {
 </script>
 
 <template>
+  <MetaManager />
+  <MetaTagsManager />
   <v-app>
     <div id="layout">
       <Header />

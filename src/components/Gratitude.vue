@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 interface GratitudeItem {
@@ -43,6 +44,42 @@ const fetchGratitudeData = async () => {
     isLoading.value = false;
   }
 };
+
+// Создаем микроразметку для благодарностей и отзывов
+const gratitudeSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: mainTitle.value,
+  description: mainContent.value || 'Благодарности и отзывы клиентов компании БурСПб',
+  mainEntity: {
+    '@type': 'Organization',
+    name: 'ООО ГК "Буровые Технологии"',
+    founder: {
+      '@type': 'Person',
+      name: 'Максим Жарнов',
+      jobTitle: 'Генеральный директор'
+    },
+    review: gratitudeItems.value.map(item => ({
+      '@type': 'Review',
+      name: item.title,
+      reviewBody: item.description,
+      author: {
+        '@type': 'Organization',
+        name: 'Клиент БурСПб'
+      }
+    }))
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(gratitudeSchema.value)
+    }
+  ]
+});
 
 onMounted(() => {
   fetchGratitudeData();

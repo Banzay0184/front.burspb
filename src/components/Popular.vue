@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import { RouterLink } from 'vue-router';
 import apiService from '../api/api';
 
@@ -40,6 +41,39 @@ const fetchPopularItems = async () => {
     isLoading.value = false;
   }
 };
+
+// Создаем микроразметку для популярных разделов
+const popularSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Популярные разделы каталога',
+  description: 'Самые популярные разделы каталога бурового оборудования',
+  itemListElement: popularItems.value.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    item: {
+      '@type': 'CategoryCode',
+      name: item.title,
+      description: item.description,
+      image: item.imageUrl,
+      url: `https://burspb.ru${item.link}`,
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `https://burspb.ru${item.link}`
+      }
+    }
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(popularSchema.value)
+    }
+  ]
+});
 
 onMounted(() => {
   fetchPopularItems();

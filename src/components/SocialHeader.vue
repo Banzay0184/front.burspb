@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 
 interface SocialItem {
   title: string;
@@ -25,6 +26,31 @@ const socialLinks = ref<SocialItem[]>([
   }
 ]);
 
+// Создаем микроразметку для социальных сетей
+const socialSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  'name': 'Оборудование для бурения №1 в России',
+  'sameAs': socialLinks.value.map(link => link.url),
+  'contactPoint': [
+    {
+      '@type': 'ContactPoint',
+      'contactType': 'customer service',
+      'email': 'info@burspb.com',
+      'availableLanguage': 'Russian'
+    }
+  ]
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(socialSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

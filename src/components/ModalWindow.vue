@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import FormOrderCall from './FormOrderCall.vue';
 
 interface Props {
@@ -7,12 +9,37 @@ interface Props {
     overlayClass?: string | Array<unknown> | object;
 }
 
-defineProps<Props>();
+const { isVisible, overlayClass } = defineProps<Props>();
 const emit = defineEmits(['close']);
 
 const close = () => {
     emit('close');
 };
+
+// Создаем микроразметку для модального окна
+const modalSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Форма заказа',
+  'description': 'Форма для быстрого заказа товара',
+  'mainEntity': {
+    '@type': 'WebPageElement',
+    'name': 'Модальное окно заказа',
+    'description': 'Форма для быстрого заказа товара',
+    'isAccessibleForFree': true,
+    'inLanguage': 'ru-RU'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(modalSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

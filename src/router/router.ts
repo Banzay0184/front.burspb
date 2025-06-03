@@ -14,7 +14,6 @@ import BasketPage from '../pages/Basket/BasketPage.vue';
 import ConfirmPage from '../pages/Basket/Confirm/ConfirmPage.vue';
 import ApiTest from '../pages/ApiTest.vue';
 import SearchPage from '../pages/Search/SearchPage.vue';
-import TestProducts from '../pages/TestProducts.vue';
 import PolicyPage from '../pages/Policy/PolicyPage.vue';
 import TermsPage from '../pages/Terms/TermsPage.vue';
 import CookiePolicyPage from '../pages/CookiePolicy/CookiePolicyPage.vue';
@@ -67,7 +66,7 @@ const routes = [
     component: KontaktyPage,
   },
   {
-    path: '/Basket/BasketPage',
+    path: '/basket',
     name: 'BasketPage',
     component: BasketPage,
     alias: '/basket'
@@ -131,11 +130,6 @@ const routes = [
     path: '/cookie-policy',
     name: 'CookiePolicyPage',
     component: CookiePolicyPage,
-  },
-  {
-    path: '/test-products',
-    name: 'TestProducts',
-    component: TestProducts,
   },
 ];
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted } from 'vue';
+import { ref, onUnmounted, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import { useRouter } from 'vue-router';
 import apiService from '../api/api';
 
@@ -110,6 +111,42 @@ const getIconForType = (type: SearchResultType): string => {
     default: return 'fa-search';
   }
 };
+
+// Создаем микроразметку для поиска
+const searchSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  'name': 'Поиск по сайту',
+  'url': '/',
+  'potentialAction': {
+    '@type': 'SearchAction',
+    'target': {
+      '@type': 'EntryPoint',
+      'urlTemplate': '/search?search={search_term_string}'
+    },
+    'query-input': 'required name=search_term_string'
+  },
+  'mainEntity': {
+    '@type': 'ItemList',
+    'itemListElement': searchResults.value.map((result) => ({
+      '@type': result.type === 'product' ? 'Product' : 
+              result.type === 'article' ? 'Article' : 'WebPage',
+      'name': result.title,
+      'url': result.url,
+      'description': result.description
+    }))
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(searchSchema.value)
+    }
+  ]
+});
 
 // Удаляем класс m-search при размонтировании компонента
 onUnmounted(() => {

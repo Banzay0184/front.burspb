@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useHead } from '@vueuse/head';
 import ModalWindow from '../../../components/ModalWindow.vue';
 import Tabs from './Tabs.vue';
 import { CartService } from '../../../api/api';
@@ -120,7 +121,7 @@ const addToCart = () => {
       articul: props.productData.sku,
       quantity: 1,
       slug: props.productData.slug,
-      availability: props.productData.availability,
+      availability: props.productData.availability || false,
       weight: props.productData.weight
     });
   }
@@ -166,6 +167,88 @@ const formattedPrice = computed(() => {
   return price;
 });
 
+// Микроразметка Schema.org
+const productSchema = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": props.productData.title,
+  "image": props.productData.image,
+  "description": props.productData.description[0].join(' '),
+  "sku": props.productData.sku,
+  "weight": {
+    "@type": "QuantitativeValue",
+    "value": parseFloat(props.productData.weight),
+    "unitCode": "KGM"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": props.productData.price.replace(/[^\d]/g, ''),
+    "priceCurrency": "RUB",
+    "availability": props.productData.availability ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    "deliveryTime": {
+      "@type": "DeliveryTimeSettings",
+      "deliveryTime": {
+        "@type": "QuantitativeValue",
+        "minValue": 1,
+        "maxValue": 2,
+        "unitCode": "DAY"
+      }
+    },
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+        "@type": "MonetaryAmount",
+        "value": "0",
+        "currency": "RUB"
+      },
+      "shippingDestination": {
+        "@type": "DefinedRegion",
+        "addressCountry": "RU"
+      }
+    }
+  },
+  "brand": {
+    "@type": "Brand",
+    "name": "БурСПб"
+  },
+  "category": "Буровое оборудование",
+  "url": `https://burspb.ru/catalog/${props.productData.slug}`,
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Главная",
+        "item": "https://burspb.ru"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Каталог",
+        "item": "https://burspb.ru/catalog"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": props.productData.title,
+        "item": `https://burspb.ru/catalog/${props.productData.slug}`
+      }
+    ]
+  }
+}));
+
+// Обновляем микроразметку при изменении данных продукта
+watch(productSchema, (schema) => {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify(schema)
+      }
+    ]
+  });
+}, { immediate: true });
 
 </script>
 
@@ -189,19 +272,16 @@ const formattedPrice = computed(() => {
                         </div>
                         <div class="product__meta__availability" 
                         :class="{
-                  'available': productData.availability,
-                  'orderable': productData.availability ,
-                  'unavailable': !productData.availability
+                  'available': productData.availability === true,
                 }"
                         >
                         <i class="fa" :class="{
                   'fa-check': productData.availability === true,
-                  'fa-clock-o': productData.availability,
-                  'fa-times': !productData.availability
+                  'fa-clock-o': productData.availability === false
                 }"></i> 
                 <span>{{ 
                   productData.availability === true  ? 'Есть в наличии' : 
-                  'Нет в наличии' 
+                  'Под заказ' 
                 }}</span>
                         </div>
                         <div class="product__meta__artikul">
@@ -234,7 +314,6 @@ const formattedPrice = computed(() => {
                                     :disabled="!productData.availability"
                                   >
                                   В корзину
-                                {{productData.availability}}
                                 </button>
                                 </span>
                                 <div v-else class="basket__qty product__basket__qty">
@@ -270,7 +349,14 @@ const formattedPrice = computed(() => {
         />
     </div>
     
-    <ModalWindow :is-visible="isModalVisible" @close="closeModal"></ModalWindow>
+    <ModalWindow :is-visible="isModalVisible" @close="closeModal">
+        <template #header>
+            <h2>Товар добавлен в корзину</h2>
+        </template>
+        <template #content>
+            <p>Товар успешно добавлен в корзину.</p>
+        </template>
+    </ModalWindow>
 </article>
 </template>
 

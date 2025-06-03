@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
+
 interface CategoryItem {
   nav_id: number;
   title: string;
@@ -10,10 +13,39 @@ interface CategoryItem {
   };
 }
 
-defineProps<{
+const props = defineProps<{
   items: CategoryItem[];
   title?: string;
 }>();
+
+// Создаем микроразметку для вложенных категорий
+const categorySchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'name': props.title || 'Категории',
+  'description': 'Список категорий товаров',
+  'itemListElement': props.items.map((item, index) => ({
+    '@type': 'ListItem',
+    'position': index + 1,
+    'name': item.params?.is_link?.title || item.title,
+    'url': item.url,
+    'item': {
+      '@type': 'WebPage',
+      'name': item.params?.is_link?.title || item.title,
+      'url': item.url
+    }
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(categorySchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

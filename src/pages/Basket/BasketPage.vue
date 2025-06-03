@@ -44,21 +44,14 @@ const cartWeight = computed(() => {
   return totalWeight.toFixed(2);
 });
 
-// Форматирование цены
-const formatPrice = (price: string) => {
-  if (price === '0 ₽' || price === '0000 ₽') {
-    return 'по запросу'
-  }
-  return price
-}
-
-// Получение цены товара
-const getItemPrice = (item: any) => {
-  return formatPrice(item.price)
-}
-
-// Функция для получения общей цены товара
+// Функция для получения цены за единицу товара
 const getItemTotalPrice = (item: any) => {
+  const price = parseFloat(item.price.replace(/\s+/g, '').replace('₽', ''));
+  return price.toLocaleString('ru-RU');
+};
+
+// Функция для получения общей стоимости товара
+const getItemTotalCost = (item: any) => {
   const price = parseFloat(item.price.replace(/\s+/g, '').replace('₽', ''));
   return (price * item.quantity).toLocaleString('ru-RU');
 };
@@ -167,7 +160,7 @@ onUnmounted(() => {
                   </div>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--price">
-                  <span>{{ getItemTotalPrice(item) }} ₽</span>
+                  <span>{{ getItemTotalCost(item) }} ₽</span>
                 </td>
                 <td class="basket__list__item__cell basket__list__item__cell--delete">
                   <button 

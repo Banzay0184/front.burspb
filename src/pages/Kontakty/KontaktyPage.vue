@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import HekpForm from './components/HelpForm.vue';
@@ -14,6 +15,75 @@ const breadcrumbs = computed(() => [
   { title: 'Главная', url: '/' },
   { title: 'Контакты', url: '', isCurrent: true }
 ]);
+
+// Создаем микроразметку для страницы контактов
+const contactSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  'name': 'Контакты',
+  'description': 'Контактная информация компании ООО ГК "Буровые технологии"',
+  'mainEntity': {
+    '@type': 'Organization',
+    'name': 'ООО ГК "Буровые технологии"',
+    'address': [
+      {
+        '@type': 'PostalAddress',
+        'streetAddress': 'Санкт-Петербург, Южное шоссе, 37 к.4 лит. Б',
+        'addressLocality': 'Санкт-Петербург',
+        'addressRegion': 'СПБ-Юг',
+        'telephone': '+79213717766'
+      },
+      {
+        '@type': 'PostalAddress',
+        'streetAddress': 'Санкт-Петербург, Выборгское шоссе, 356',
+        'addressLocality': 'Санкт-Петербург',
+        'addressRegion': 'СПБ-Север',
+        'telephone': '+79110369668'
+      }
+    ],
+    'contactPoint': [
+      {
+        '@type': 'ContactPoint',
+        'telephone': '+78122427585',
+        'contactType': 'customer service',
+        'areaServed': 'СПБ-Юг',
+        'availableLanguage': 'Russian'
+      },
+      {
+        '@type': 'ContactPoint',
+        'telephone': '+78122427588',
+        'contactType': 'customer service',
+        'areaServed': 'СПБ-Север',
+        'availableLanguage': 'Russian'
+      }
+    ],
+    'email': 'info@burspb.com',
+    'sameAs': [
+      'https://t.me/bur_spb',
+      'https://api.whatsapp.com/send?phone=79213162621'
+    ],
+    'taxID': '7816318009',
+    'vatID': '781601001',
+    'legalName': 'ООО ГК "Буровые технологии"',
+    'foundingDate': '2016',
+    'bankAccount': {
+      '@type': 'BankAccount',
+      'accountNumber': '40702810803500028018',
+      'bankName': 'Точка ПАО Банка «ФК ОТКРЫТИЕ»',
+      'bic': '044525999'
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(contactSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

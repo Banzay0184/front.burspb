@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 
 interface Props {
   title?: string
@@ -10,7 +11,7 @@ interface Props {
   }>
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: 'Товары каталога',
   showFilter: true,
   sortOptions: () => [
@@ -21,21 +22,20 @@ withDefaults(defineProps<Props>(), {
     { value: 'name-asc', label: 'По названию (А-Я)' },
     { value: 'name-desc', label: 'По названию (Я-А)' }
   ]
-})
+});
 
 const emit = defineEmits(['sort-change', 'price-filter-change']);
 
 // Состояния фильтров
 const minPriceInput = ref('');
 const maxPriceInput = ref('');
-const selectedSort = ref('price-asc');
+const selectedSort = ref('popularity-desc');
 let filterTimeout: number | null = null;
 
 // Обработчики изменений
 const handleSortChange = (event: Event) => {
   const selectElement = event.target as HTMLSelectElement;
   selectedSort.value = selectElement.value;
-
   emit('sort-change', selectedSort.value);
 };
 
@@ -69,11 +69,17 @@ const applyPriceFilter = () => {
     minPriceInput.value = min;
     maxPriceInput.value = max;
   }
-  
 
+  // Сохраняем текущую позицию скролла
+  const scrollPosition = window.scrollY;
   
   // Отправляем событие фильтрации
   emit('price-filter-change', min, max);
+
+  // Восстанавливаем позицию скролла после обновления DOM
+  requestAnimationFrame(() => {
+    window.scrollTo(0, scrollPosition);
+  });
 };
 
 // Обработчик потери фокуса полями ввода
@@ -108,7 +114,7 @@ const handleInputChange = () => {
   filterTimeout = window.setTimeout(() => {
     applyPriceFilter();
     filterTimeout = null;
-  }, 1000); // Увеличиваем задержку до 1 секунды
+  }, 1000);
 };
 
 // Очистка таймаута при размонтировании компонента
@@ -122,6 +128,42 @@ onUnmounted(() => {
 onMounted(() => {
   // Устанавливаем изначальную сортировку
   emit('sort-change', selectedSort.value);
+});
+
+// Создаем микроразметку для фильтров и сортировки
+const filterSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': '',
+  'description': 'Фильтрация и сортировка товаров',
+  'mainEntity': {
+    '@type': 'ItemList',
+    'itemListElement': props.sortOptions.map((option, index) => ({
+      '@type': 'ListItem',
+      'position': index + 1,
+      'item': {
+        '@type': 'WebPage',
+        'name': option.label,
+        'url': `?sort=${option.value}`
+      }
+    }))
+  },
+  'offers': {
+    '@type': 'AggregateOffer',
+    'priceCurrency': 'RUB',
+    'lowPrice': minPriceInput.value || '0',
+    'highPrice': maxPriceInput.value || '∞'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(filterSchema.value)
+    }
+  ]
 });
 </script>
 
@@ -174,7 +216,7 @@ onMounted(() => {
               @change="handleSortChange"
             >
               <option 
-                v-for="option in sortOptions" 
+                v-for="option in props.sortOptions" 
                 :key="option.value" 
                 :value="option.value"
               >

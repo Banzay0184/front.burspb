@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Pagination from '../../components/Pagination.vue';
 import Cards from './components/Cards.vue';
@@ -111,6 +112,56 @@ watch(() => route.params.category, () => {
 const handlePageChange = (page: number) => {
   fetchPosts(page);
 };
+
+// Создаем микроразметку для страницы статей
+const blogSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  'name': categoryName.value ? `Статьи категории "${categoryName.value}"` : 'Все статьи',
+  'description': 'Полезные статьи и материалы об оборудовании для бурения',
+  'publisher': {
+    '@type': 'Organization',
+    'name': 'ООО ГК "Буровые технологии"',
+    'logo': {
+      '@type': 'ImageObject',
+      'url': '/images/logo.svg'
+    }
+  },
+  'blogPost': posts.value.map(post => ({
+    '@type': 'BlogPosting',
+    'headline': post.title.rendered,
+    'description': post.excerpt.rendered,
+    'datePublished': post.date,
+    'dateModified': post.modified,
+    'author': {
+      '@type': 'Organization',
+      'name': 'ООО ГК "Буровые технологии"'
+    },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'ООО ГК "Буровые технологии"',
+      'logo': {
+        '@type': 'ImageObject',
+        'url': '/images/logo.svg'
+      }
+    },
+    'mainEntityOfPage': {
+      '@type': 'WebPage',
+      '@id': `/statji/${post.slug}`
+    },
+    'image': post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '/images/logo.svg'
+  }))
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(blogSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

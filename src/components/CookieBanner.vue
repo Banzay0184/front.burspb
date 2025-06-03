@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 
 const isVisible = ref(false);
 
@@ -13,6 +14,34 @@ onMounted(() => {
   if (!cookiesAccepted) {
     isVisible.value = true;
   }
+});
+
+// Создаем микроразметку для баннера с cookie
+const cookieBannerSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPageElement',
+  'name': 'Уведомление о cookie',
+  'description': 'Этот сайт использует файлы cookie для улучшения работы сайта и предоставления вам наилучшего пользовательского опыта.',
+  'text': 'Этот сайт использует файлы cookie для улучшения работы сайта и предоставления вам наилучшего пользовательского опыта. Используя данный сайт, вы соглашаетесь с использованием файлов cookie.',
+  'isAccessibleForFree': true,
+  'inLanguage': 'ru-RU',
+  'mainEntity': {
+    '@type': 'WebPageElement',
+    'name': 'Уведомление о cookie',
+    'description': 'Этот сайт использует файлы cookie для улучшения работы сайта и предоставления вам наилучшего пользовательского опыта.',
+    'isAccessibleForFree': true,
+    'inLanguage': 'ru-RU'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(cookieBannerSchema.value)
+    }
+  ]
 });
 </script>
 

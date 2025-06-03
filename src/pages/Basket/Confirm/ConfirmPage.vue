@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../../components/Breadcrumbs.vue';
 import { CartService, getApiUrl } from '../../../api/api';
 import PhoneInput from '../../../components/PhoneInput.vue';
@@ -173,6 +174,52 @@ const submitOrder = async () => {
 // Загружаем данные при монтировании
 onMounted(() => {
   loadCart();
+});
+
+// Создаем микроразметку для страницы оформления заказа
+const orderSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'CheckoutPage',
+  'name': 'Оформление заказа',
+  'description': 'Страница оформления заказа в интернет-магазине оборудования для бурения',
+  'mainEntity': {
+    '@type': 'Order',
+    'orderStatus': orderSuccess.value ? 'OrderDelivered' : 'OrderProcessing',
+    'orderedItem': cartItems.value.map(item => ({
+      '@type': 'OrderItem',
+      'name': item.title,
+      'sku': item.articul,
+      'price': item.price.replace(/\s+/g, '').replace('₽', ''),
+      'quantity': item.quantity,
+      'image': item.image
+    })),
+    'customer': {
+      '@type': userType.value === 'entity' ? 'Organization' : 'Person',
+      'name': userType.value === 'entity' ? formData.value.entity_name : `${formData.value.first_name} ${formData.value.last_name}`,
+      'telephone': formData.value.phone,
+      'email': formData.value.email,
+      ...(userType.value === 'entity' && { 'taxID': formData.value.inn })
+    },
+    'paymentMethod': {
+      '@type': 'PaymentMethod',
+      'name': paymentMethod.value === 'cash' ? 'Наличные' : 
+              paymentMethod.value === 'transfer' ? 'Безналичный перевод' : 'Банковская карта'
+    },
+    'deliveryMethod': {
+      '@type': 'DeliveryMethod',
+      'name': deliveryMethod.value === 'pickup' ? 'Самовывоз' : 'Транспортная компания'
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(orderSchema.value)
+    }
+  ]
 });
 </script>
 
@@ -466,7 +513,7 @@ onMounted(() => {
                 <div class="form__row form__row--action">
                   <button 
                     type="submit" 
-                    class="button button--blue button--cover" 
+                    class="button button--blue button--outline" 
                     :disabled="isLoading"
                   >
                     {{ isLoading ? 'Отправка...' : 'Оформить заказ' }}

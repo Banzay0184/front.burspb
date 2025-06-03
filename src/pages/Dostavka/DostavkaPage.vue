@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Form from './components/Form.vue';
@@ -13,6 +14,85 @@ const breadcrumbs = computed(() => [
   { title: 'Главная', url: '/' },
   { title: 'Доставка', url: '', isCurrent: true }
 ]);
+
+// Создаем микроразметку для страницы доставки
+const deliverySchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Доставка',
+  'description': 'Информация о способах доставки оборудования для бурения',
+  'mainEntity': {
+    '@type': 'Service',
+    'name': 'Доставка оборудования для бурения',
+    'provider': {
+      '@type': 'Organization',
+      'name': 'Оборудование для бурения №1 в России'
+    },
+    'offers': {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Доставка оборудования',
+        'description': 'Доставка осуществляется только по предоплате в любой регион РФ'
+      },
+      'price': '0',
+      'priceCurrency': 'RUB',
+      'availability': 'https://schema.org/InStock'
+    },
+    'hasOfferCatalog': {
+      '@type': 'OfferCatalog',
+      'name': 'Способы доставки',
+      'itemListElement': [
+        {
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': 'Транспортная компания'
+          }
+        },
+        {
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': 'Самовывоз'
+          }
+        },
+        {
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': 'Почта России'
+          }
+        },
+        {
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': 'Доставка до адреса'
+          }
+        },
+        {
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': 'Бесплатная доставка',
+            'description': 'При заказе на сумму свыше 100 000 руб.'
+          }
+        }
+      ]
+    }
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(deliverySchema.value)
+    }
+  ]
+});
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -23,16 +24,36 @@ const handleKeydown = (event: KeyboardEvent) => {
     submitSearch();
   }
 };
+
+// Создаем микроразметку для поиска
+const searchSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  url: 'https://burspb.ru',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://burspb.ru/search?search={search_term_string}'
+    },
+    'query-input': 'required name=search_term_string'
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(searchSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>
-  <div itemtype="http://schema.org/WebSite" class="search">
-    <form 
-      itemprop="potentialAction" 
-      itemtype="http://schema.org/SearchAction"
-      @submit.prevent="submitSearch"
-    >
-      <meta itemprop="target" content="/search?q={q}" /> 
+  <div class="search">
+    <form @submit.prevent="submitSearch">
       <input 
         type="search" 
         name="search" 
@@ -42,7 +63,6 @@ const handleKeydown = (event: KeyboardEvent) => {
         v-model="searchQuery"
         @keydown="handleKeydown"
       />
-      <input itemprop="query-input" type="hidden" name="query" value="search" /> 
       <button 
         type="submit"
         class="button button--search button--search-form"

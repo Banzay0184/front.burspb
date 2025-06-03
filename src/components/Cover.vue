@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 
 // Используем интерфейс из api.ts для структуры блока Cover
@@ -42,6 +43,52 @@ const fetchCoverData = async () => {
 
 onMounted(() => {
   fetchCoverData();
+});
+
+// Создаем микроразметку для главного изображения и заголовка
+const coverSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title.value,
+  description: content.value.replace(/<[^>]*>/g, ''), // Удаляем HTML теги
+  image: {
+    '@type': 'ImageObject',
+    url: imageUrl.value,
+    caption: imageAlt.value,
+    width: 1366,
+    height: 768
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://burspb.ru/statji'
+  },
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Главная',
+        item: 'https://burspb.ru'
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Статьи',
+        item: 'https://burspb.ru/statji'
+      }
+    ]
+  }
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(coverSchema.value)
+    }
+  ]
 });
 </script>
 

@@ -26,7 +26,7 @@ const totalPages = ref(1);
 const postsPerPage = ref(24);
 
 // Параметры фильтрации
-const sortType = ref('price-asc');
+const sortType = ref('popularity-desc');
 const priceMin = ref<string | null>(null);
 const priceMax = ref<string | null>(null);
 let fetchTimeout: number | null = null;
@@ -34,7 +34,7 @@ let fetchTimeout: number | null = null;
 // Инициализация параметров из URL
 const initParamsFromUrl = () => {
   const page = Number(route.query.page) || 1;
-  const sort = route.query.sort as string || 'price-asc';
+  const sort = route.query.sort as string || 'popularity-desc';
   const min = route.query.price_min as string || null;
   const max = route.query.price_max as string || null;
 
@@ -52,7 +52,7 @@ const updateUrl = () => {
     query.page = currentPage.value.toString();
   }
   
-  if (sortType.value !== 'price-asc') {
+  if (sortType.value !== 'popularity-desc') {
     query.sort = sortType.value;
   }
   
@@ -89,86 +89,66 @@ const fetchProducts = async () => {
     clearTimeout(fetchTimeout);
   }
 
-  fetchTimeout = window.setTimeout(async () => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      // Формируем строку параметров запроса
-      const params = new URLSearchParams();
-      
-      // Добавляем параметры пагинации
-      if (currentPage.value > 1) {
-        params.append('page', currentPage.value.toString());
-      }
-      
-      // Добавляем параметры сортировки
-      if (sortType.value) {
-        params.append('sort', sortType.value);
-      }
-      
-      // Добавляем параметры фильтрации по цене
-      if (priceMin.value !== null && priceMin.value !== '') {
-        const minPrice = parseInt(priceMin.value);
-        if (!isNaN(minPrice) && minPrice >= 0) {
-          params.append('price_min', minPrice.toString());
+  return new Promise<void>((resolve) => {
+    fetchTimeout = setTimeout(async () => {
+      try {
+        isLoading.value = true;
+        error.value = null;
+
+        // Формируем параметры запроса
+        const params = new URLSearchParams({
+          page: currentPage.value.toString(),
+          sort: sortType.value,
+          posts_per_page: postsPerPage.value.toString()
+        });
+
+        if (priceMin.value) {
+          params.append('price_min', priceMin.value);
         }
-      }
-      
-      if (priceMax.value !== null && priceMax.value !== '') {
-        const maxPrice = parseInt(priceMax.value);
-        if (!isNaN(maxPrice) && maxPrice >= 0) {
-          params.append('price_max', maxPrice.toString());
+        if (priceMax.value) {
+          params.append('price_max', priceMax.value);
         }
-      }
-      
-      // Выполняем запрос к API
-      const queryString = params.toString() ? `?${params.toString()}` : '';
-      const apiUrl = getApiUrl(`products/${queryString}`);
-      
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json'
+
+        const response = await fetch(`${getApiUrl()}/products?${params.toString()}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Ошибка при загрузке товаров');
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Ошибка загрузки данных: ${response.status} ${response.statusText}`);
+
+        if (data.pagination) {
+          currentPage.value = data.pagination.current || 1;
+          totalPages.value = data.pagination.pages_total || 1;
+          postsPerPage.value = data.pagination.posts_per_page || 24;
+        }
+        
+        // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
+        cardsList.value = data.posts.map((product: any) => ({
+          id: product.id,
+          title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
+          link: `/catalog/product-${product.slug}`,
+          image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+          alt: product.img?.alt?.description || product.title || 'Изображение товара',
+          availability: product.meta?.availability || false,
+          articul: product.meta?.artikul || '',
+          oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+          currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+          showOldPrice: !!product.meta?.price_old,
+          slug: product.slug || '',
+          views: product.meta?.views || 0
+        }));
+        
+      } catch (err: any) {
+        console.error('Error fetching products:', err);
+        error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+        cardsList.value = [];
+      } finally {
+        isLoading.value = false;
+        fetchTimeout = null;
+        resolve();
       }
-      
-      const data = await response.json();
-      
-      // Обрабатываем данные пагинации
-      if (data.pagination) {
-        currentPage.value = data.pagination.current || 1;
-        totalPages.value = data.pagination.pages_total || 1;
-        postsPerPage.value = data.pagination.posts_per_page || 24;
-      }
-      
-      // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
-      cardsList.value = data.posts.map((product: any) => ({
-        id: product.id,
-        title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
-        link: `/catalog/product-${product.slug}`,
-        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-        alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        availability: product.meta.availability || null,
-        articul: product.meta?.artikul || '',
-        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-        showOldPrice: !!product.meta?.price_old,
-        slug: product.slug || ''
-      }));
-      
-    } catch (err: any) {
-      console.error('Error fetching products:', err);
-      error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
-      cardsList.value = [];
-    } finally {
-      isLoading.value = false;
-      fetchTimeout = null;
-    }
-  }, 300); // Добавляем небольшую задержку для предотвращения частых запросов
+    }, 300);
+  });
 };
 
 // Очистка таймаута при размонтировании компонента
@@ -193,10 +173,20 @@ const handleSortChange = (sort: string) => {
 };
 
 const handlePriceFilterChange = (min: string | null, max: string | null) => {
+  // Сохраняем текущую позицию скролла
+  const scrollPosition = window.scrollY;
+  
   priceMin.value = min;
   priceMax.value = max;
   currentPage.value = 1; // Сбрасываем на первую страницу при изменении фильтра цены
-  fetchProducts();
+  
+  // Вызываем fetchProducts с сохранением позиции скролла
+  fetchProducts().then(() => {
+    // Восстанавливаем позицию скролла после обновления DOM
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
+  });
 };
 
 const addToCart = (id: number) => {
@@ -217,7 +207,7 @@ const addToCart = (id: number) => {
         articul: product.articul,
         quantity: 1,
         slug: product.slug,
-        availability: product.availability || null,
+        availability: product.availability || false,
       });
     }
   }
@@ -283,10 +273,8 @@ const breadcrumbs = computed(() => [
 
                   <!-- Пагинация -->
                   <Pagination 
-                    v-if="totalPages > 1"
-                    :current-page="currentPage"
-                    :total-pages="totalPages"
-                    base-url="/catalog"
+                    :current-page="Number(currentPage)" 
+                    :total-pages="totalPages" 
                     @page-change="handlePageChange"
                   />
                 </template>

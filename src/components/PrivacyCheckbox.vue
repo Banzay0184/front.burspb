@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
 const props = defineProps<{
   modelValue: boolean;
   error?: boolean;
@@ -22,7 +20,7 @@ const handleChange = (event: Event) => {
       <input
         type="checkbox"
         class="privacy-checkbox__input"
-        :checked="modelValue"
+        :checked="props.modelValue"
         @change="handleChange"
       />
       <span class="privacy-checkbox__text">
@@ -46,7 +44,7 @@ const handleChange = (event: Event) => {
         </a>
       </span>
     </label>
-    <span v-if="error" class="privacy-checkbox__error">
+    <span v-if="props.error" class="privacy-checkbox__error">
       Необходимо согласиться с условиями
     </span>
   </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import apiService from '../api/api';
 import ModalWindow from './ModalWindow.vue';
 
@@ -113,6 +114,58 @@ const getPagePath = (item: NavItem) => {
   
   return pageMap[item.slug] || `/${item.slug}`;
 };
+
+// Создаем микроразметку для организации
+const organizationSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: entity.value.split('\n')[0],
+  url: 'https://burspb.com',
+  logo: logoFooter.value,
+  address: {
+    '@type': 'PostalAddress',
+    postalCode: '192241',
+    addressCountry: 'Россия',
+    addressRegion: 'Санкт-Петербург',
+    addressLocality: 'Санкт-Петербург',
+    streetAddress: address.value
+  },
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      telephone: phone.value.replace(/\s/g, ''),
+      contactType: 'customer service',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+      contactOption: 'TollFree',
+      hoursAvailable: `${workingDays.value} ${workingHours.value}`
+    },
+    {
+      '@type': 'ContactPoint',
+      telephone: phoneAlt.value.replace(/\s/g, ''),
+      contactType: 'customer service',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+      contactOption: 'TollFree',
+      hoursAvailable: `${workingDays.value} ${workingHours.value}`
+    }
+  ],
+  email: email.value,
+  sameAs: socialLinks.value.map(link => link.url),
+  openingHours: `${workingDays.value} ${workingHours.value}`,
+  vatID: entity.value.split('\n')[1].replace('ИНН ', ''),
+  taxID: entity.value.split('\n')[2].replace('ОГРН ', '')
+}));
+
+// Добавляем микроразметку в head
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(organizationSchema.value)
+    }
+  ]
+});
 </script>
 
 <template>
@@ -226,10 +279,6 @@ const getPagePath = (item: NavItem) => {
                   <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Разработка сайта и СЕО продвижение</a>
                   <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank">KLS Digital</a>
                 </div>
-                <div class="dev-by__coder">
-                  <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Программирование и поддержка</a>
-                  <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank">Atypicalcoder.Dev</a>
-                </div>
               </div>
             </div>
           </div>
@@ -299,10 +348,10 @@ const getPagePath = (item: NavItem) => {
           
           <div class="dev-by">
             <div>
-              <div class="dev-by__coder">
-                <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Программирование и поддержка</a>
-                <a href="https://atypicalcoder.dev/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank"> Atypicalcoder.Dev</a>
-              </div>
+              <div class="dev-by__prime">
+                  <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank" class="span">Разработка сайта и СЕО продвижение</a>
+                  <a href="https://kls-digital.ru/?utm_source=reference&amp;utm_medium=burspb&amp;utm_campaign=text" target="_blank">KLS Digital</a>
+                </div>
             </div>
           </div>
         </div>
