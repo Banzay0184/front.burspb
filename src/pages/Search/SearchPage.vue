@@ -5,6 +5,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Cards from '../../components/Cards.vue';
 import { CartService } from '../../api/api';
 import { getApiUrl } from '../../api/api';
+import { useSeo } from '../../utils/seo';
 
 // Получаем данные из URL
 const route = useRoute();
@@ -47,6 +48,27 @@ const pageTitle = computed(() => {
     `Результаты поиска: ${searchQuery.value}` : 
     'Поиск';
 });
+
+// Инициализация SEO с правильными каноническими ссылками
+const updateSeo = () => {
+  const title = searchQuery.value 
+    ? `Результаты поиска: ${searchQuery.value} — Оборудование для бурения №1 в России`
+    : 'Поиск — Оборудование для бурения №1 в России';
+  const description = searchQuery.value
+    ? `Результаты поиска по запросу "${searchQuery.value}" в каталоге бурового оборудования и инструментов.`
+    : 'Поиск по каталогу бурового оборудования и инструментов. Найдите нужное оборудование быстро и просто.';
+  const canonical = searchQuery.value ? '/search' : route.path;
+
+  useSeo({
+    title,
+    description,
+    canonical,
+    noindex: !!searchQuery.value // не индексируем страницы результатов поиска
+  });
+};
+
+// Обновляем SEO при изменении поискового запроса
+watch(searchQuery, updateSeo, { immediate: true });
 
 // Функция поиска
 const performSearch = async () => {
@@ -162,7 +184,7 @@ watch(() => route.query.search, (newQuery) => {
 
             <section class="section selected-products">
                 <div class="section-title">
-          <h3 class="section-title-tag">{{ pageTitle }}</h3>
+          <h1 class="section-title-tag">{{ pageTitle }}</h1>
         </div>
 
         <!-- Индикатор загрузки -->

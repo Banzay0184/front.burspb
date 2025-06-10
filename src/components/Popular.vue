@@ -16,27 +16,40 @@ const popularItems = ref<PopularItem[]>([]);
 const isLoading = ref(true);
 const hasError = ref(false);
 
-const fetchPopularItems = async () => {
-  isLoading.value = true;
-  hasError.value = false;
-  
-  try {
-    const response = await apiService.blocks.getPopular();
+const getInitialData = () => {
+  if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+    try {
+      let initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
+      }
+      return initialState.popularBlocks || [];
+      } catch (err) {
+    // Тихо обрабатываем ошибку парсинга
+    return [];
+  }
+  }
+  return [];
+};
 
-    if (response.data && Array.isArray(response.data.content)) {
-      popularItems.value = response.data.content.map((item: any) => ({
+const fetchPopularItems = async () => {
+  try {
+    isLoading.value = true;
+    hasError.value = false;
+    const response = await apiService.blocks.getPopular();
+    const popularData = response.data.content || [];
+
+    // Преобразуем API данные в PopularItem формат
+    popularItems.value = popularData.map((item: any) => ({
         id: item.id || 0,
         title: item.title || '',
         description: item.description || undefined,
         imageUrl: item.image?.webp_full || item.image?.full || '',
         link: item.url?.slug ? `/catalog/selection-${item.url.slug}` : '/catalog'
       }));
-      
-    } else {
-      hasError.value = true;
-    }
   } catch (error) {
     hasError.value = true;
+    popularItems.value = [];
   } finally {
     isLoading.value = false;
   }
@@ -76,7 +89,26 @@ useHead({
 });
 
 onMounted(() => {
+  // Проверяем есть ли предварительно загруженные данные SSG
+  const ssgData = getInitialData();
+  
+  if (ssgData && Array.isArray(ssgData) && ssgData.length > 0) {
+    // Преобразуем SSG данные в PopularItem формат
+    popularItems.value = ssgData.map((item: any) => ({
+      id: item.id || 0,
+      title: item.title || '',
+      description: item.description || undefined,
+      imageUrl: item.image?.webp_full || item.image?.full || '',
+      link: item.url?.slug ? `/catalog/selection-${item.url.slug}` : '/catalog'
+    }));
+    
+    isLoading.value = false;
+    hasError.value = false;
+  } else {
+  if (typeof window !== 'undefined') {
   fetchPopularItems();
+    }
+  }
 });
 </script>
 

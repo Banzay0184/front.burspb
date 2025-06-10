@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useHead } from '@vueuse/head';
 import Benefits from '../components/Benefits.vue';
 import Cover from '../components/Cover.vue';
@@ -11,17 +11,37 @@ import RecentPosts from '../components/RecentPosts.vue';
 import Cards from '../components/Cards.vue';
 import { CartService } from '../api/api';
 import { getApiUrl } from '../api/api';
+import { useNotifications } from '../composables/useNotifications';
+
+// Инициализация уведомлений
+const { showNotification, notificationMessage, showNotificationMessage } = useNotifications();
+
+// SEO мета-теги для главной страницы управляются через SSG конфигурацию
+// Не вызываем useSeo() чтобы не перезаписывать мета-теги из SSG
 
 // Состояние компонента для карточек товаров
 const cardsList = ref<any[]>([]);
 const cardsListAdditional = ref<any[]>([]);
-const isLoading = ref(true);
+const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-// Состояние уведомления
-const showNotification = ref(false);
-const notificationMessage = ref('');
-const notificationTimeout = ref<number | null>(null);
+// Получаем предварительно загруженные данные из SSG initialState
+const getInitialData = () => {
+  if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+    try {
+      // Если данные в виде строки JSON, парсим их
+      let initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
+      }
+      return initialState.popularProducts || [];
+    } catch (err) {
+      // Тихо обрабатываем ошибку парсинга
+      return [];
+    }
+  }
+  return [];
+};
 
 // Микроразметка Schema.org
 const websiteSchema = computed(() => ({
@@ -59,31 +79,62 @@ const productsSchema = computed(() => ({
 }));
 
 // Обновляем микроразметку при изменении данных
-watch([websiteSchema, productsSchema], ([website, products]) => {
-  useHead({
-    script: [
-      {
-        type: 'application/ld+json',
-        children: JSON.stringify(website)
-      },
-      {
-        type: 'application/ld+json',
-        children: JSON.stringify(products)
-      }
-    ]
-  });
-}, { immediate: true });
+useHead({
+  script: computed(() => [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(websiteSchema.value)
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(productsSchema.value)
+    }
+  ])
+});
+
+// Функция преобразования данных продукта
+const transformProduct = (product: any) => ({
+  id: product.id,
+  title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
+  link: `/catalog/product-${product.slug}`,
+  image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+  alt: product.img?.alt?.description || product.title || 'Изображение товара',
+  availability: product.meta?.availability || false,
+  articul: product.meta?.artikul || '',
+  oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+  currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+  showOldPrice: !!product.meta?.price_old,
+  slug: product.slug || '',
+  quantity: 1,
+  weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
+});
 
 // Функция для запроса популярных продуктов с API
 const fetchPopularProducts = async () => {
-  isLoading.value = true;
   error.value = null;
   
   try {
-    // Запрашиваем продукты, сортируя по популярности (количеству просмотров)
+    // Сначала пытаемся использовать предварительно загруженные данные
+    const initialData = getInitialData();
+    
+    if (initialData.length > 0) {
+      // Используем предварительно загруженные данные
+      cardsList.value = initialData.slice(0, 4).map(transformProduct);
+      
+      if (initialData.length > 4) {
+        cardsListAdditional.value = initialData.slice(4).map(transformProduct);
+      }
+      
+      isLoading.value = false;
+      return;
+    }
+    
+    // Если предварительно загруженных данных нет, делаем API запрос
+    isLoading.value = true;
+    
     const params = new URLSearchParams({
-      sort: 'popularity-desc', // Сортировка по популярности (от большего к меньшему)
-      per_page: '8'  // Получаем первые 8 популярных продуктов
+      sort: 'popularity-desc',
+      per_page: '8'
     });
     
     const response = await fetch(getApiUrl(`products/?${params.toString()}`));
@@ -94,66 +145,20 @@ const fetchPopularProducts = async () => {
     
     const data = await response.json();
     
-    // Преобразуем первые 4 продукта для основного отображения
     if (data.posts && data.posts.length > 0) {
-      cardsList.value = data.posts.slice(0, 4).map((product: any) => ({
-        id: product.id,
-        title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
-        link: `/catalog/product-${product.slug}`,
-        image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-        alt: product.img?.alt?.description || product.title || 'Изображение товара',
-        availability: product.meta?.availability || false,
-        articul: product.meta?.artikul || '',
-        oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-        currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-        showOldPrice: !!product.meta?.price_old,
-        slug: product.slug || '',
-        quantity: 1,
-        weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
-      }));
+      cardsList.value = data.posts.slice(0, 4).map(transformProduct);
       
-      // Если есть еще продукты, добавляем их в дополнительные для "Загрузить еще"
       if (data.posts.length > 4) {
-        cardsListAdditional.value = data.posts.slice(4).map((product: any) => ({
-          id: product.id,
-          title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
-          link: `/catalog/product-${product.slug}`,
-          image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-          alt: product.img?.alt?.description || product.title || 'Изображение товара',
-          availability: product.meta?.availability || null,
-          articul: product.meta?.artikul || '',
-          oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-          currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-          showOldPrice: !!product.meta?.price_old,
-          slug: product.slug || '',
-          quantity: 1,
-          weight: product.meta?.weight ? `${product.meta.weight} кг` : ''
-        }));
+        cardsListAdditional.value = data.posts.slice(4).map(transformProduct);
       }
     }
     
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
+          // Тихо обрабатываем ошибку загрузки
   } finally {
     isLoading.value = false;
   }
-};
-
-// Функция показа уведомления
-const showNotificationMessage = (message: string) => {
-  // Очищаем предыдущий таймер, если он существует
-  if (notificationTimeout.value) {
-    clearTimeout(notificationTimeout.value);
-  }
-  
-  // Устанавливаем сообщение и показываем уведомление
-  notificationMessage.value = message;
-  showNotification.value = true;
-  
-  // Скрываем уведомление через 3 секунды
-  notificationTimeout.value = setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
 };
 
 const addToCart = (id: number) => {
@@ -161,12 +166,20 @@ const addToCart = (id: number) => {
   const product = [...cardsList.value, ...cardsListAdditional.value].find(item => item.id === id);
   
   if (product) {
+    // Проверяем доступность товара и выводим соответствующее уведомление
+    if (!product.availability) {
+      // Товар под заказ - уведомление обрабатывается в UI
+    }
+
     // Проверяем, уже есть ли товар в корзине
     if (CartService.isInCart(id)) {
       // Если товар уже в корзине, увеличиваем количество
       const currentQuantity = CartService.getItemQuantity(id);
       CartService.updateItemQuantity(id, currentQuantity + 1);
-      showNotificationMessage(`Количество товара "${product.title}" увеличено (${currentQuantity + 1} шт.)`);
+      const notificationText = !product.availability 
+        ? `Количество товара "${product.title}" увеличено (${currentQuantity + 1} шт.) - товар под заказ`
+        : `Количество товара "${product.title}" увеличено (${currentQuantity + 1} шт.)`;
+      showNotificationMessage(notificationText);
     } else {
       // Добавляем новый товар в корзину
       CartService.addToCart({
@@ -180,7 +193,10 @@ const addToCart = (id: number) => {
         availability: product.availability || false,
         weight: product.weight || ''
       });
-      showNotificationMessage(`Товар "${product.title}" добавлен в корзину`);
+      const notificationText = !product.availability 
+        ? `Товар "${product.title}" добавлен в корзину (под заказ)`
+        : `Товар "${product.title}" добавлен в корзину`;
+      showNotificationMessage(notificationText);
     }
   }
 };
@@ -194,6 +210,15 @@ onMounted(() => {
 
 <template>
 <main class="main main--index">
+    <!-- SEO заголовок для главной страницы -->
+    <div class="wrapper">
+        <section class="hero-section">
+            <h1 class="hero-title visually-hidden-but-seo">
+                Буровые установки, оборудование и инструмент
+            </h1>
+        </section>
+    </div>
+    
     <div class="fullwidth fullwidth--benefits">
         <div class="wrapper">
             <Benefits />
@@ -262,6 +287,40 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
+/* SEO заголовок - скрыт визуально, но виден для поисковиков */
+.hero-section {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.hero-title.visually-hidden-but-seo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  
+  /* Обеспечиваем доступность для screen readers */
+  &:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0.5rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    font-size: 1.2rem;
+    text-align: center;
+  }
+}
+
 .error-message {
   color: red;
   padding: 20px;

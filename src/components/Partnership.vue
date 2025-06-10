@@ -72,7 +72,9 @@ useHead({
 });
 
 onMounted(() => {
-  fetchPartnershipSteps();
+  if (typeof window !== 'undefined') {
+    fetchPartnershipSteps();
+  }
 });
 </script>
 

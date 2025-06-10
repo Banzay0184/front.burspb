@@ -36,7 +36,21 @@ let filterTimeout: number | null = null;
 const handleSortChange = (event: Event) => {
   const selectElement = event.target as HTMLSelectElement;
   selectedSort.value = selectElement.value;
+  // Сортировка изменена
+  
+  // Сохраняем текущую позицию скролла
+  const scrollPosition = window.scrollY;
+  
+  // Отправляем событие изменения сортировки
   emit('sort-change', selectedSort.value);
+
+  // Восстанавливаем позицию скролла после обновления DOM
+  // Используем двойной requestAnimationFrame для гарантии
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
+  });
 };
 
 // Обработчик применения фильтра цены
@@ -169,7 +183,7 @@ useHead({
 
 <template>
   <div class="section-title section-title--with-filter">
-    <h1 class="section-title-tag">{{ title }}</h1>
+    <h2 class="section-title-tag">{{ title }}</h2>
 
     <div v-if="showFilter" class="section-title-filter">
       <ul>

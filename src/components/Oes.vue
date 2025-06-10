@@ -28,13 +28,15 @@ const fetchSeoData = async () => {
 };
 
 onMounted(() => {
-  fetchSeoData();
+  if (typeof window !== 'undefined') {
+    fetchSeoData();
+  }
 });
 </script>
 
 <template>
     <section class="section oes" :class="{ 'is-loading': isLoading, 'has-error': hasError }">
-        <div class="section-title"><h1 class="section-title-tag">{{ title }}</h1></div>
+        <div class="section-title"><h2 class="section-title-tag">{{ title }}</h2></div>
         <div class="content" v-html="content"></div>
     </section>
 </template>

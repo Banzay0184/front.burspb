@@ -1,31 +1,12 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { updateMetaTags } from '../services/metaService';
-import { metaConfig } from '../config/metaConfig';
+// Этот компонент больше не используется для SEO
+// SEO теперь управляется через SeoManager.vue
+// Оставляем компонент пустым для совместимости
 
-const route = useRoute();
-
-const updateMeta = () => {
-  const pageKey = route.name as string;
-  const meta = metaConfig[pageKey] || metaConfig.home;
-  updateMetaTags(meta);
-};
-
-// Обновляем мета-теги при монтировании компонента
-onMounted(() => {
-  updateMeta();
-});
-
-// Следим за изменениями маршрута
-watch(
-  () => route.name,
-  () => {
-    updateMeta();
-  }
-);
+  // MetaManager отключен, SEO управляется через SeoManager
 </script>
 
 <template>
-  <!-- Этот компонент не рендерит ничего в DOM -->
+  <!-- Этот компонент больше не используется для SEO -->
+  <!-- SEO управляется через SeoManager.vue -->
 </template> 

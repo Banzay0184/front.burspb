@@ -3,10 +3,22 @@ import { computed } from 'vue';
 import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
+import { useRoute } from 'vue-router';
+import { useSeo } from '../../utils/seo';
 
 defineOptions({
     name: 'Okompanii.vue'
 })
+
+// Получаем роутер и текущий маршрут
+const route = useRoute();
+
+// Инициализация SEO
+useSeo({
+  title: route.meta.title as string,
+  description: route.meta.description as string,
+  canonical: route.fullPath
+});
 
 // Хлебные крошки
 const breadcrumbs = computed(() => [
@@ -62,15 +74,32 @@ useHead({
 <main class="main">
     <div class="wrapper">
         <Breadcrumbs :items="breadcrumbs" />
+        
+        <section class="page-header">
+            <h1 class="page-title">О компании</h1>
+        </section>
     </div>
     <div class="wrapper">
        <Gratitude />
     </div>
 </main>
-
-
-
 </template>
 
 <style lang="scss" scoped>
+.page-header {
+  margin: 2rem 0;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+@media screen and (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+  }
+}
 </style>

@@ -14,33 +14,64 @@ const benefits = ref<BenefitItem[]>([]);
 const isLoading = ref(true);
 const hasError = ref(false);
 
+const getInitialData = () => {
+  if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+    try {
+      let initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
+      }
+      return initialState.benefitsBlock || {};
+    } catch (err) {
+      // Тихо обрабатываем ошибку парсинга
+      return {};
+    }
+  }
+  return {};
+};
+
 const fetchBenefits = async () => {
-  isLoading.value = true;
-  hasError.value = false;
-  
   try {
+    isLoading.value = true;
+    hasError.value = false;
     const response = await apiService.blocks.getBenefits();
+    const benefitsData = response.data.content || [];
     
-    if (response.data && Array.isArray(response.data.content)) {
-      benefits.value = response.data.content.map((item: any) => ({
+    // Преобразуем API данные в BenefitItem формат
+    benefits.value = benefitsData.map((item: any) => ({
         icon: item.image?.webp_full || item.image?.full || '',
         alt: item.image?.alt?.title || `benefits-item`,
         title: item.title || '',
         description: item.description || ''
       }));
-      
-    } else {
-      hasError.value = true;
-    }
   } catch (error) {
     hasError.value = true;
+    benefits.value = [];
   } finally {
     isLoading.value = false;
   }
 };
 
 onMounted(() => {
+  // Проверяем есть ли предварительно загруженные данные SSG
+  const ssgData = getInitialData();
+  
+  if (ssgData && Array.isArray(ssgData) && ssgData.length > 0) {
+    // Преобразуем SSG данные в BenefitItem формат
+    benefits.value = ssgData.map((item: any) => ({
+      icon: item.image?.webp_full || item.image?.full || '',
+      alt: item.image?.alt?.title || `benefits-item`,
+      title: item.title || '',
+      description: item.description || ''
+    }));
+    
+    isLoading.value = false;
+    hasError.value = false;
+  } else {
+  if (typeof window !== 'undefined') {
   fetchBenefits();
+    }
+  }
 });
 
 // Создаем микроразметку для преимуществ компании

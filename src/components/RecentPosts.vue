@@ -20,24 +20,31 @@ interface Article {
 const articles = ref<Article[]>([]);
 const sectionTitle = ref('Последние статьи');
 const isLoading = ref(false);
+const hasError = ref(false);
+const recentPosts = ref<Article[]>([]);
 
-// Получение данных из API
-const fetchRecentPosts = async () => {
-  isLoading.value = true;
-  
+// Инициализация данных с SSG поддержкой  
+const initialSSGData = ref<Article[]>([]);
+
+const getInitialData = () => {
   try {
-    const response = await apiService.blocks.getRecentPosts();
+    let initialState = null;
     
-    if (response.data) {
-      // Обновляем заголовок секции
-      if (response.data.title) {
-        sectionTitle.value = response.data.title;
+    // В клиенте получаем из window
+    if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+      initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
       }
+    }
+    
+    if (initialState) {
+      // Используем recentPostsBlock (данные из block/recent-posts)
+      const ssgData = initialState.recentPostsBlock || initialState.articles || [];
       
-      // Получаем массив постов
-      if (response.data.content && Array.isArray(response.data.content.posts)) {
-        // Маппинг данных API в формат для компонента
-        articles.value = response.data.content.posts.map((post: any) => ({
+      // Если есть данные из block/recent-posts, преобразуем их в Article формат
+      if (ssgData && Array.isArray(ssgData) && ssgData.length > 0) {
+        return ssgData.map((post: any) => ({
           id: post.id,
           title: post.title,
           url: `/statji/${post.slug}`,
@@ -51,14 +58,62 @@ const fetchRecentPosts = async () => {
         }));
       }
     }
+    
+    return [];
+  } catch (err) {
+    // Тихо обрабатываем ошибку парсинга
+    return [];
+  }
+};
+
+// Получаем SSG данные сразу при создании (для SSR)
+const ssgData = getInitialData();
+if (ssgData && ssgData.length > 0) {
+  initialSSGData.value = ssgData.slice(0, 3);
+  recentPosts.value = initialSSGData.value;
+}
+
+const fetchRecentPosts = async () => {
+  try {
+    isLoading.value = true;
+    hasError.value = false;
+    const response = await apiService.posts.getAll();
+    const posts = response.data.slice(0, 3) || [];
+    
+    // Преобразуем Post в Article формат
+    recentPosts.value = posts.map((post: any) => ({
+      id: post.id,
+      title: post.title,
+      url: `/statji/${post.slug}`,
+      image: post.img?.webp_full || post.img?.full || '',
+      imageAlt: post.img?.alt?.title || post.title,
+      date: post.date,
+      author: post.author || '',
+      views: post.meta?.views || 0,
+      readTime: post.meta?.read_time ? `${post.meta.read_time} мин` : '5 мин',
+      description: post.excerpt || ''
+    }));
   } catch (error) {
+    hasError.value = true;
+    recentPosts.value = [];
   } finally {
     isLoading.value = false;
   }
 };
 
 onMounted(() => {
+  // Проверяем есть ли предварительно загруженные данные SSG
+  const ssgData = getInitialData();
+  
+  if (ssgData && ssgData.length > 0) {
+    recentPosts.value = ssgData.slice(0, 3);
+    isLoading.value = false;
+    hasError.value = false;
+  } else {
+  if (typeof window !== 'undefined') {
   fetchRecentPosts();
+    }
+  }
 });
 
 const formatDate = (dateString: string): string => {
@@ -107,8 +162,8 @@ useHead({
     <div class="section-title">
       <h3 class="section-title-tag">{{ sectionTitle }}</h3>
     </div>
-    <ul v-if="articles.length > 0" itemscope itemtype="http://schema.org/Blog" class="cards">
-      <li v-for="article in articles" :key="article.id" class="cards__item">
+    <ul v-if="recentPosts.length > 0" itemscope itemtype="http://schema.org/Blog" class="cards">
+      <li v-for="article in recentPosts" :key="article.id" class="cards__item">
         <div itemprop="blogPosts" itemscope itemtype="http://schema.org/BlogPosting" class="card card--post">
           <div class="card__background">
             <img 

@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useHead } from '@vueuse/head';
+import { useRoute } from 'vue-router';
+import { useSeo } from '../../utils/seo';
 
 defineOptions({
     name: 'CookiePolicyPage.vue'
+});
+
+// Получаем роутер и текущий маршрут
+const route = useRoute();
+
+// Инициализация SEO
+useSeo({
+  title: route.meta.title as string,
+  description: route.meta.description as string,
+  canonical: route.fullPath
 });
 
 // Создаем микроразметку для страницы политики использования файлов cookie

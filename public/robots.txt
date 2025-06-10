@@ -1,65 +1,63 @@
+# Robots.txt file for БурСПб
+# Generated for production SEO optimization
+
 # Общие правила для всех роботов
 User-agent: *
-Disallow: /catalog/*/page/
-Disallow: /basket/
-Disallow: /confirm/
-Disallow: /search/
-Disallow: /*?*
+Allow: /
+
+# Запрещаем индексацию служебных страниц и файлов
+Disallow: /basket
+Disallow: /search
 Disallow: /api/
 Disallow: /admin/
-Disallow: /wp-admin/
-Disallow: /wp-login.php
-Disallow: /wp-includes/
-Disallow: /wp-content/plugins/
-Disallow: /wp-content/themes/
+Disallow: /dist/
+Disallow: /node_modules/
 Disallow: /*.json$
-Disallow: /*.xml$
-Disallow: /*.txt$
-Disallow: /*.md$
-Disallow: /*.log$
-Disallow: /*.sql$
-Disallow: /*.php$
 Disallow: /*.js$
 Disallow: /*.css$
-Disallow: /*.ttf$
-Disallow: /*.woff$
-Disallow: /*.woff2$
-Disallow: /*.eot$
-Disallow: /*.svg$
-Disallow: /*.ico$
-Allow: /catalog/
-Allow: /statji/
-Allow: /garantiya/
-Allow: /oplata/
-Allow: /dostavka/
-Allow: /okompanii/
+Disallow: /*.map$
+Disallow: /*.ts$
+Disallow: /*.vue$
+
+# Разрешаем изображения и медиа
 Allow: /*.jpg$
 Allow: /*.jpeg$
 Allow: /*.gif$
 Allow: /*.png$
 Allow: /*.webp$
+Allow: /*.svg$
+Allow: /*.ico$
+Allow: /*.pdf$
 
-# Специальные правила для Google
+# Специальные правила для поисковых роботов Google
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 5
+Crawl-delay: 1
 
-# Специальные правила для Yandex
+# Специальные правила для Яндекс
 User-agent: Yandexbot
 Allow: /
-Crawl-delay: 5
+Crawl-delay: 1
 
-# Правила для мобильных ботов
+# Специальные правила для Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Мобильные боты
 User-agent: Googlebot-Mobile
 Allow: /
-Crawl-delay: 5
+Crawl-delay: 1
 
 User-agent: YandexMobileBot
 Allow: /
-Crawl-delay: 5
+Crawl-delay: 1
 
 # Указываем расположение sitemap
 Sitemap: https://burspb.com/sitemap.xml
 
-# Указываем задержку между запросами для остальных ботов
-Crawl-delay: 10
+# Host указывает основной домен (для Яндекса)
+Host: burspb.com
+
+# Общая задержка для остальных ботов
+Crawl-delay: 5

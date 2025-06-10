@@ -1,32 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
-    <title>Главная — Оборудование для бурения №1 в России</title>
-    <meta data-n-head="ssr" charset="utf-8">
-    <meta data-n-head="ssr" name="viewport" content="width=device-width,initial-scale=1">
-    <meta data-n-head="ssr" data-hid="description" name="description"
-      content="Поставка оборудования и инструмента для бурения скважин">
-    <meta data-n-head="ssr" name="format-detection" content="telephone=no">
-    <link data-n-head="ssr" rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link data-n-head="ssr" rel="preconnect" href="https://burspb.com">
-    <link data-n-head="ssr" rel="dns-prefetch" href="https://burspb.com">
-    <link data-n-head="ssr" data-hid="logo-image" rel="preload" as="image" href="https://burspb.com/api/files/logo.svg">
-    <link data-n-head="ssr" data-hid="popular-image-1" rel="preload" as="image"
-      href="https://burspb.com/api/files/popular-01.jpg.webp">
-
-
+    <!-- Базовые мета-теги -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- SEO мета-теги (обновляются SSG и @vueuse/head) -->
+    <title>{{VITE_SSG_TITLE}}</title>
+    <meta name="description" content="{{VITE_SSG_DESCRIPTION}}">
+    <meta name="keywords" content="буровое оборудование, инструменты для бурения, буровые долота">
+    <meta name="author" content="Burspb">
+    <!-- robots meta-тег управляется динамически через SEO систему -->
+    
+    <!-- Фавиконки и иконки -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- Производительность -->
+    <link rel="preconnect" href="https://burspb.com">
+    <link rel="preconnect" href="https://admin.burspb.com">
+    <link rel="dns-prefetch" href="https://burspb.com">
+    <link rel="dns-prefetch" href="https://admin.burspb.com">
+    
+    <!-- Предварительная загрузка критических ресурсов (временно отключены из-за проблем с сервером) -->
+    
+    <!-- Open Graph и Twitter Card мета-теги (обновляются динамически через JavaScript) -->
+    <!-- Статические теги убраны, так как URL должен быть динамическим для localhost/продакшн -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://burspb.com/">
-    <meta property="og:title" content="Буровые технологии - буровое оборудование и инструменты">
-    <meta property="og:description" content="Производство и продажа бурового оборудования, инструментов и комплектующих. Широкий ассортимент, гарантия качества, доставка по всей России.">
-    <meta property="og:image" content="https://burspb.com/api/files/og-image.jpg">
+    <meta property="og:site_name" content="Burspb">
+    <meta property="og:locale" content="ru_RU">
+    <meta name="twitter:card" content="summary_large_image">
 
-
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://burspb.com/">
-    <meta property="twitter:title" content="Буровые технологии - буровое оборудование и инструменты">
-    <meta property="twitter:description" content="Производство и продажа бурового оборудования, инструментов и комплектующих. Широкий ассортимент, гарантия качества, доставка по всей России.">
-    <meta property="twitter:image" content="https://burspb.com/api/files/og-image.jpg">
+    <!-- Дополнительные SEO мета-теги -->
+    <meta name="theme-color" content="#1976d2">
+    <meta name="msapplication-TileColor" content="#1976d2">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Структурированные данные будут добавлены через компоненты -->
 
     <!-- Yandex.Metrika counter -->
     <script type="text/javascript">
@@ -40,7 +54,8 @@
         clickmap:true,
         trackLinks:true,
         accurateTrackBounce:true,
-        webvisor:true
+        webvisor:true,
+        defer: true
       });
     </script>
     <!-- /Yandex.Metrika counter -->
@@ -48,6 +63,13 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/28733361" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- Скрипт для передачи данных SSG в клиентскую часть -->
+    <script>
+      window.__INITIAL_STATE__ = __INITIAL_STATE__;
+    </script>
+    <noscript>
+      <div><img src="https://mc.yandex.ru/watch/28733361" style="position:absolute; left:-9999px;" alt=""></div>
+      <p>Для корректной работы сайта необходимо включить JavaScript</p>
+    </noscript>
   </body>
 </html>

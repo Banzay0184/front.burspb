@@ -42,7 +42,9 @@ const fetchCoverData = async () => {
 };
 
 onMounted(() => {
-  fetchCoverData();
+  if (typeof window !== 'undefined') {
+    fetchCoverData();
+  }
 });
 
 // Создаем микроразметку для главного изображения и заголовка

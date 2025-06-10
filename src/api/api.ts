@@ -2,10 +2,8 @@ import axios, { type AxiosInstance } from 'axios';
 
 // Конфигурация API URL в зависимости от окружения
 const getApiBaseUrl = () => {
-  if (import.meta.env.DEV) {
+  // Всегда используем абсолютный URL к admin.burspb.com
     return 'https://admin.burspb.com/data/v1';
-  }
-  return '/api/data/v1';
 };
 
 
@@ -489,6 +487,11 @@ export class CartService {
 
   // Получить все товары из корзины
   static getCart(): CartItem[] {
+    // Проверяем, что код выполняется в браузере
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return [];
+    }
+    
     const cartData = localStorage.getItem(this.STORAGE_KEY);
     if (!cartData) return [];
     
@@ -501,6 +504,11 @@ export class CartService {
 
   // Добавить товар в корзину
   static addToCart(item: CartItem): void {
+    // Проверяем, что код выполняется в браузере
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     const cart = this.getCart();
     const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
     
@@ -518,6 +526,11 @@ export class CartService {
 
   // Обновить количество товара в корзине
   static updateItemQuantity(id: number, quantity: number): void {
+    // Проверяем, что код выполняется в браузере
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     const cart = this.getCart();
     const existingItemIndex = cart.findIndex(item => item.id === id);
     
@@ -530,6 +543,11 @@ export class CartService {
 
   // Удалить товар из корзины
   static removeFromCart(id: number): void {
+    // Проверяем, что код выполняется в браузере
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     let cart = this.getCart();
     cart = cart.filter(item => item.id !== id);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
@@ -538,6 +556,11 @@ export class CartService {
 
   // Очистить корзину
   static clearCart(): void {
+    // Проверяем, что код выполняется в браузере
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
     this.triggerCartChange();
   }

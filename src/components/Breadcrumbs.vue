@@ -35,7 +35,9 @@ const breadcrumbSchema = computed(() => ({
     '@type': 'ListItem',
     position: index + 1,
     name: item.title,
-    item: item.isCurrent ? window.location.href : `https://burspb.ru${getBreadcrumbUrl(item)}`
+    item: item.isCurrent 
+      ? (typeof window !== 'undefined' ? window.location.href : 'https://burspb.ru')
+      : `https://burspb.ru${getBreadcrumbUrl(item)}`
   })) || []
 }));
 

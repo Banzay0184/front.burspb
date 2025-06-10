@@ -5,11 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "vue-tsc -b && vite-ssg build && node postbuild-seo.js",
+    "build:spa": "vue-tsc -b && vite build",
+    "build:ssg": "vue-tsc -b && vite-ssg build && node postbuild-seo.js",
+    "preview": "vite preview --outDir dist",
+    "preview:ssg": "vite preview --outDir dist",
+    "generate": "vite-ssg build",
+    "serve": "vite preview",
+    "test:static": "npm run build:ssg && npm run preview:ssg"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@unhead/vue": "^2.0.10",
     "@vueuse/head": "^2.0.0",
     "axios": "^1.9.0",
     "pinia": "^3.0.1",
@@ -23,6 +30,7 @@
     "sass-embedded": "^1.86.0",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
+    "vite-ssg": "^27.0.1",
     "vue-tsc": "^2.2.4"
   }
 }

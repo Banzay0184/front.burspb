@@ -82,7 +82,9 @@ useHead({
 });
 
 onMounted(() => {
-  fetchGratitudeData();
+  if (typeof window !== 'undefined') {
+    fetchGratitudeData();
+  }
 });
 </script>
 

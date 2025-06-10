@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useHead } from '@vueuse/head'
 import { CartService } from '../api/api'
+import { useNotifications } from '../composables/useNotifications'
 
 interface Card {
   id: number
@@ -39,52 +40,21 @@ const props = defineProps({
   loadMore: {
     type: Boolean,
     default: false
-  },
-  sortBy: {
-    type: String,
-    default: 'price-asc'
   }
 })
 
 const emit = defineEmits(['add-to-cart'])
 
+// Инициализация уведомлений
+const { showNotificationMessage } = useNotifications();
+
 const cards = ref<Card[]>([...props.initialCards])
 const isLoading = ref(false)
 const hasMoreCards = ref(props.additionalCards.length > 0)
 
-// Функция сортировки карточек
-const sortCards = (cards: Card[], sortBy: string) => {
-  const sortedCards = [...cards];
-  
-  switch (sortBy) {
-    case 'popularity-desc':
-      return sortedCards.sort((a, b) => b.views - a.views);
-    case 'popularity-asc':
-      return sortedCards.sort((a, b) => a.views - b.views);
-    case 'price-asc':
-      return sortedCards.sort((a, b) => {
-        const priceA = parseFloat(a.currentPrice.replace(/[^\d.]/g, '')) || 0;
-        const priceB = parseFloat(b.currentPrice.replace(/[^\d.]/g, '')) || 0;
-        return priceA - priceB;
-      });
-    case 'price-desc':
-      return sortedCards.sort((a, b) => {
-        const priceA = parseFloat(a.currentPrice.replace(/[^\d.]/g, '')) || 0;
-        const priceB = parseFloat(b.currentPrice.replace(/[^\d.]/g, '')) || 0;
-        return priceB - priceA;
-      });
-    case 'name-asc':
-      return sortedCards.sort((a, b) => a.title.localeCompare(b.title));
-    case 'name-desc':
-      return sortedCards.sort((a, b) => b.title.localeCompare(a.title));
-    default:
-      return sortedCards;
-  }
-};
-
-// Следим за изменением сортировки
-watch(() => props.sortBy, (newSortBy) => {
-  cards.value = sortCards(cards.value, newSortBy);
+// Следим за изменением данных от родительского компонента
+watch(() => props.initialCards, (newCards) => {
+  cards.value = [...newCards];
 }, { immediate: true });
 
 // Компонент для микроразметки Schema.org
@@ -125,16 +95,14 @@ const cardsSchema = computed(() => ({
 }));
 
 // Обновляем микроразметку при изменении карточек
-watch(cardsSchema, (schema) => {
-  useHead({
-    script: [
-      {
-        type: 'application/ld+json',
-        children: JSON.stringify(schema)
-      }
-    ]
-  });
-}, { immediate: true });
+useHead({
+  script: computed(() => [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(cardsSchema.value)
+    }
+  ])
+});
 
 // Форматирование цены
 const formatPrice = (price: string) => {
@@ -146,6 +114,14 @@ const formatPrice = (price: string) => {
 
 // Метод для добавления товара в корзину
 const addToCart = (card: Card) => {
+  // Формируем сообщение для уведомления
+  const notificationText = !card.availability 
+    ? `Товар "${card.title}" добавлен в корзину (под заказ)`
+    : `Товар "${card.title}" добавлен в корзину`;
+  
+  // Показываем уведомление
+  showNotificationMessage(notificationText);
+  
   emit('add-to-cart', card.id);
 }
 
@@ -168,6 +144,7 @@ const increaseQuantity = (id: number) => {
 
 const decreaseQuantity = (id: number) => {
   const currentQuantity = CartService.getItemQuantity(id);
+  
   if (currentQuantity > 1) {
     CartService.updateItemQuantity(id, currentQuantity - 1);
   } else {
@@ -279,9 +256,10 @@ onUnmounted(() => {
                   v-if="!isInCart(card.id)"
                   @click="addToCart(card)" 
                   class="button button--blue button--bsket"
-                  :disabled="card.availability === false"
+                  :class="{ 'button--warning': !card.availability }"
+                  :title="!card.availability ? 'Товар под заказ - возможны задержки в поставке' : 'Добавить в корзину'"
                 >
-                  В корзину
+                  {{ !card.availability ? 'Заказать' : 'В корзину' }}
                 </button>
                 
                 <div v-else class="in-cart-controls">
@@ -290,6 +268,7 @@ onUnmounted(() => {
                       class="basket__qty__action basket__qty__action--minus" 
                       :class="{ inactive: getItemQuantity(card.id) <= 1 }"
                       @click="decreaseQuantity(card.id)"
+                      :title="getItemQuantity(card.id) <= 1 ? 'Удалить товар из корзины' : 'Уменьшить количество'"
                     >-</span>
                     <span class="in-cart-quantity">{{ getItemQuantity(card.id) }}</span>
                     <span 
@@ -362,12 +341,13 @@ onUnmounted(() => {
 }
 
 .basket__qty__action--minus.inactive {
-  cursor: default;
-  opacity: 0.5;
+  cursor: pointer; /* Разрешаем клики даже на неактивной кнопке */
+  opacity: 0.7;
 }
 
 .basket__qty__action--minus.inactive:hover {
-  background: #006079
+  background: #0cf;
+  opacity: 1;
 }
 
 .card__meta__availability.orderable {
@@ -375,6 +355,16 @@ onUnmounted(() => {
 }
 
 .card__meta__availability.orderable i {
-  color: rgb(255, 255, 255)
+  color: rgb(255, 255, 255);
+}
+
+.button--warning {
+  background-color: #ff9800 !important;
+  border-color: #ff9800 !important;
+}
+
+.button--warning:hover {
+  background-color: #f57c00 !important;
+  border-color: #f57c00 !important;
 }
 </style>

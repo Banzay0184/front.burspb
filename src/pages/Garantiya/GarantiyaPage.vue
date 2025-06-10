@@ -4,10 +4,22 @@ import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import Form from './components/Form.vue';
+import { useRoute } from 'vue-router';
+import { useSeo } from '../../utils/seo';
 
     defineOptions({
       name: 'GarantiyaPage.vue'
     })
+
+// Получаем роутер и текущий маршрут
+const route = useRoute();
+
+// Инициализация SEO
+useSeo({
+  title: route.meta.title as string,
+  description: route.meta.description as string,
+  canonical: route.fullPath
+});
 
 // Хлебные крошки
 const breadcrumbs = computed(() => [

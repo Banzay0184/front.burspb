@@ -6,6 +6,7 @@ import Gratitude from '../../components/Gratitude.vue';
 import Product from './components/Product.vue';
 import Cards from '../../components/Cards.vue';
 import { CartService, getApiUrl } from '../../api/api';
+import { useSeo, getOpenGraphType } from '../../utils/seo';
 
 // Получаем параметры маршрута
 const route = useRoute();
@@ -268,6 +269,35 @@ watch(productSlug, (newSlug, oldSlug) => {
     fetchProductData();
   }
 });
+
+// Инициализация SEO для продукта
+const updateProductSeo = () => {
+  if (!productData.value) return;
+
+  const title = `${productData.value.title} — Оборудование для бурения №1 в России`;
+  const description = `Купить ${productData.value.title} по цене ${productData.value.price}. ${productData.value.description?.[0]?.[0] ? productData.value.description[0][0].slice(0, 150) + '...' : 'Высокое качество бурового оборудования, гарантия, доставка по России.'}`;
+  const canonical = `/catalog/product-${productSlug.value}`;
+  
+  // Формируем полный URL изображения для Open Graph
+  const ogImage = productData.value.image.startsWith('http') 
+    ? productData.value.image 
+    : `https://burspb.com${productData.value.image}`;
+  
+  // Open Graph тип для продуктов
+  const ogType = getOpenGraphType('product');
+
+  useSeo({
+    title,
+    description,
+    canonical,
+    image: ogImage, // Полный URL изображения
+    type: ogType, // Правильный Open Graph тип для продуктов
+    structuredData: productSchema.value
+  });
+};
+
+// Следим за изменениями данных продукта для обновления SEO
+watch(() => productData.value, updateProductSeo);
 
 // Загрузка данных при монтировании компонента
 onMounted(() => {

@@ -78,7 +78,9 @@ useHead({
 });
 
 onMounted(() => {
-  fetchGlobalData();
+  if (typeof window !== 'undefined') {
+    fetchGlobalData();
+  }
 });
 </script>
 

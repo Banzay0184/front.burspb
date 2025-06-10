@@ -8,11 +8,14 @@ import Cards from '../../components/Cards.vue';
 import CategoriesFull from './components/CategoriesFull.vue';
 import { CartService } from '../../api/api';
 import { getApiUrl } from '../../api/api';
-import { useSeo } from '../../utils/seo';
+import { useSeoWithPagination, getCategoryOgImage, getOpenGraphType } from '../../utils/seo';
 
 // Получаем роутер и текущий маршрут
 const route = useRoute();
 const router = useRouter();
+
+// Отладочная информация
+// Route информация получена
 
 // Состояние компонента
 const cardsList = ref<any[]>([]);
@@ -30,6 +33,42 @@ const sortType = ref('popularity-desc');
 const priceMin = ref<string | null>(null);
 const priceMax = ref<string | null>(null);
 let fetchTimeout: number | null = null;
+
+// Получаем предварительно загруженные данные из SSG initialState
+const getInitialData = () => {
+  if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+    try {
+      let initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
+      }
+      return {
+        products: initialState.popularProducts || [],
+        categories: initialState.categories || []
+      };
+    } catch (err) {
+      // Тихо обрабатываем ошибку парсинга
+      return { products: [], categories: [] };
+    }
+  }
+  return { products: [], categories: [] };
+};
+
+// Функция преобразования данных продукта
+const transformProduct = (product: any) => ({
+  id: product.id,
+  title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
+  link: `/catalog/product-${product.slug}`,
+  image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
+  alt: product.img?.alt?.description || product.title || 'Изображение товара',
+  availability: product.meta?.availability || false,
+  articul: product.meta?.artikul || '',
+  oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
+  currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
+  showOldPrice: !!product.meta?.price_old,
+  slug: product.slug || '',
+  views: product.meta?.views || 0
+});
 
 // Инициализация параметров из URL
 const initParamsFromUrl = () => {
@@ -76,12 +115,25 @@ watch([currentPage, sortType, priceMin, priceMax], () => {
   updateUrl();
 });
 
-// Устанавливаем SEO мета-теги
-useSeo({
-  title: 'Каталог продукции - Буровые технологии',
-  description: 'Каталог бурового оборудования и инструментов. Широкий выбор качественного оборудования для бурения от компании Буровые технологии.',
-  canonical: route.fullPath
-});
+// Инициализация SEO с правильной обработкой пагинации
+const updateSeo = () => {
+  const basePath = '/catalog';
+  
+  // Динамическое изображение для каталога
+  const ogImage = getCategoryOgImage(cardsList.value, 'catalog');
+  const ogType = getOpenGraphType('website');
+
+  useSeoWithPagination({
+    // title убран - будет использоваться автоматическое определение или данные из API
+    currentPage: currentPage.value,
+    basePath,
+    image: ogImage,
+    type: ogType
+  });
+};
+
+// Обновляем SEO при изменении страницы
+watch([currentPage], updateSeo, { immediate: true });
 
 // Функция для запроса данных с API
 const fetchProducts = async () => {
@@ -94,6 +146,20 @@ const fetchProducts = async () => {
       try {
         isLoading.value = true;
         error.value = null;
+
+        // Сначала пытаемся использовать предварительно загруженные данные
+        const initialData = getInitialData();
+        
+        if (initialData.products.length > 0 && currentPage.value === 1 && sortType.value === 'popularity-desc' && !priceMin.value && !priceMax.value) {
+          // Используем предварительно загруженные данные для первой страницы каталога
+          cardsList.value = initialData.products.map(transformProduct);
+          totalPages.value = 1; // Для предварительно загруженных данных
+          isLoading.value = false;
+          resolve();
+          return;
+        }
+
+        // Если предварительно загруженных данных нет или нужны другие параметры, делаем API запрос
 
         // Формируем параметры запроса
         const params = new URLSearchParams({
@@ -123,23 +189,10 @@ const fetchProducts = async () => {
         }
         
         // Преобразуем полученные данные в формат, ожидаемый компонентом Cards
-        cardsList.value = data.posts.map((product: any) => ({
-          id: product.id,
-          title: product.title?.length > 40 ? `${product.title.substring(0, 40)}…` : (product.title || 'Без названия'),
-          link: `/catalog/product-${product.slug}`,
-          image: product.img?.webp_square_350 || product.img?.square_350 || product.img?.webp_full || product.img?.full || '',
-          alt: product.img?.alt?.description || product.title || 'Изображение товара',
-          availability: product.meta?.availability || false,
-          articul: product.meta?.artikul || '',
-          oldPrice: product.meta?.price_old ? `${product.meta.price_old} ₽` : '',
-          currentPrice: product.meta?.price ? `${product.meta.price} ₽` : '0 ₽',
-          showOldPrice: !!product.meta?.price_old,
-          slug: product.slug || '',
-          views: product.meta?.views || 0
-        }));
+        cardsList.value = data.posts.map(transformProduct);
         
-      } catch (err: any) {
-        console.error('Error fetching products:', err);
+              } catch (err: any) {
+        // Тихо обрабатываем ошибку загрузки
         error.value = err instanceof Error ? err.message : 'Неизвестная ошибка';
         cardsList.value = [];
       } finally {
@@ -167,9 +220,20 @@ const handlePageChange = (page: number) => {
 };
 
 const handleSortChange = (sort: string) => {
+  
+  // Сохраняем текущую позицию скролла
+  const scrollPosition = window.scrollY;
+  
   sortType.value = sort;
   currentPage.value = 1; // Сбрасываем на первую страницу при изменении сортировки
-  fetchProducts();
+  
+  // Вызываем fetchProducts с сохранением позиции скролла
+  fetchProducts().then(() => {
+    // Восстанавливаем позицию скролла после обновления DOM
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
+  });
 };
 
 const handlePriceFilterChange = (min: string | null, max: string | null) => {
@@ -216,7 +280,10 @@ const addToCart = (id: number) => {
 // Инициализация при монтировании
 onMounted(() => {
   initParamsFromUrl();
+  // Загружаем товары только в браузере
+  if (typeof window !== 'undefined') {
   fetchProducts();
+  }
 });
 
 // Хлебные крошки

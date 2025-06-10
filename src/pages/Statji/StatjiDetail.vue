@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Gratitude from '../../components/Gratitude.vue';
 import apiService from '../../api/api';
+import { useSeo, getOpenGraphType, createArticleSchema } from '../../utils/seo';
 
 interface Post {
   id: number;
@@ -65,15 +66,22 @@ const fetchSimilarPostData = async (slug: string) => {
 };
 
 const getPostSlug = () => {
-  // Получаем slug из параметров маршрута
-  return route.params.slug || 'kak-vybrat-skvazhinnyj-nasos';
+  // Получаем slug из параметров маршрута, без fallback значения
+  return route.params.slug as string;
 };
 
 const fetchPostData = async () => {
   try {
     isLoading.value = true;
     const slug = getPostSlug();
-    const response = await apiService.posts.getBySlug(slug as string);
+    
+    // Проверяем, что slug существует
+    if (!slug) {
+      error.value = 'Статья не найдена. Проверьте правильность URL.';
+      return;
+    }
+    
+    const response = await apiService.posts.getBySlug(slug);
     
     if (response.data) {
       // Приводим полученные данные к типу Post
@@ -122,10 +130,16 @@ const fetchPostData = async () => {
         similarPosts.value = await Promise.all(similarPostsPromises);
       }
     } else {
-      error.value = 'Не удалось загрузить статью. Пожалуйста, попробуйте позже.';
+      error.value = `Статья "${slug}" не найдена. Возможно, она была удалена или перемещена.`;
     }
   } catch (err) {
-    error.value = 'Произошла ошибка при загрузке статьи. Пожалуйста, попробуйте позже.';
+    console.error('Ошибка загрузки статьи:', err);
+    const slug = getPostSlug();
+    if (slug) {
+      error.value = `Произошла ошибка при загрузке статьи "${slug}". Пожалуйста, попробуйте позже.`;
+    } else {
+      error.value = 'Произошла ошибка при загрузке статьи. Проверьте правильность URL.';
+    }
   } finally {
     isLoading.value = false;
   }
@@ -150,7 +164,55 @@ const breadcrumbs = computed(() => [
   { title: 'Статьи', url: '/statji' },
   { title: post.value?.title || 'Статья', url: '', isCurrent: true }
 ]);
-  onMounted(() => {
+
+// SEO для статьи
+const updateArticleSeo = () => {
+  if (!post.value) return;
+
+  // Дефолтный суффикс для статей
+  const DEFAULT_SUFFIX = 'Оборудование для бурения №1 в России';
+  
+  // Используем заголовок статьи из API, добавляя суффикс
+  const title = `${post.value.title} — ${DEFAULT_SUFFIX}`;
+  // Создаем description из первых 150 символов контента, очищенного от HTML
+  const cleanContent = post.value.content.replace(/<[^>]*>/g, '');
+  const description = cleanContent.length > 150 
+    ? `${cleanContent.slice(0, 150)}...` 
+    : cleanContent;
+  
+  const canonical = `/statji/${getPostSlug()}`;
+  
+  // Open Graph изображение статьи
+  const ogImage = post.value.img?.webp_full || post.value.img?.full || 'https://burspb.com/api/files/og-image-article.jpg';
+  const fullOgImage = ogImage.startsWith('http') ? ogImage : `https://burspb.com${ogImage}`;
+  
+  // Создаем структурированные данные для статьи
+  const articleSchema = createArticleSchema({
+    title: post.value.title,
+    description,
+    image: fullOgImage,
+    author: post.value.author,
+    publishedTime: post.value.date,
+    modifiedTime: post.value.modified,
+    section: post.value.category?.[0]?.title || 'Статьи'
+  });
+
+  useSeo({
+    title,
+    description,
+    canonical,
+    image: fullOgImage,
+    type: getOpenGraphType('article'),
+    publishedTime: post.value.date,
+    modifiedTime: post.value.modified,
+    structuredData: articleSchema
+  });
+};
+
+// Обновляем SEO при изменении данных статьи
+watch(() => post.value, updateArticleSeo);
+
+onMounted(() => {
   fetchPostData();
 });
 </script>

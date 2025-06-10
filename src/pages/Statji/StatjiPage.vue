@@ -1,41 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
 import Pagination from '../../components/Pagination.vue';
 import Cards from './components/Cards.vue';
 import apiService from '../../api/api';
-
-interface ApiResponse {
-  location: null;
-  category: null | {
-    term_id: number;
-    name: string;
-    slug: string;
-    term_group: number;
-    term_taxonomy_id: number;
-    taxonomy: string;
-    description: string;
-    parent: number;
-    count: number;
-    filter: string;
-    cat_ID: number;
-    category_count: number;
-    category_description: string;
-    cat_name: string;
-    category_nicename: string;
-    category_parent: number;
-  };
-  pagination: {
-    posts_per_page: number;
-    current: number;
-    previous: null | number;
-    next: null | number;
-    pages_total: number;
-  };
-  posts: Array<any>;
-}
+import { useSeoWithPagination, getOpenGraphType } from '../../utils/seo';
 
 const route = useRoute();
 const currentPage = ref(1);
@@ -45,6 +16,23 @@ const error = ref<string | null>(null);
 const posts = ref<any[]>([]);
 const categoryName = ref<string | null>(null);
 const categorySlug = ref<string | null>(null);
+
+// Получаем предварительно загруженные данные из SSG initialState
+const getInitialData = () => {
+  if (typeof window !== 'undefined' && (window as any).__INITIAL_STATE__) {
+    try {
+      let initialState = (window as any).__INITIAL_STATE__;
+      if (typeof initialState === 'string') {
+        initialState = JSON.parse(initialState);
+      }
+      return initialState.articles || [];
+    } catch (err) {
+      // Тихо обрабатываем ошибку парсинга
+      return [];
+    }
+  }
+  return [];
+};
 
 // Хлебные крошки
 const breadcrumbs = computed(() => [
@@ -63,6 +51,20 @@ const fetchPosts = async (page = 1) => {
     const category = getCategorySlug();
     categorySlug.value = category;
     
+    // Сначала пытаемся использовать предварительно загруженные данные
+    const initialData = getInitialData();
+    
+    if (initialData.length > 0 && !category && page === 1) {
+      // Используем предварительно загруженные данные только для главной страницы статей
+      posts.value = initialData;
+      totalPages.value = 1; // Для предварительно загруженных данных
+      currentPage.value = 1;
+      isLoading.value = false;
+      return;
+    }
+    
+    // Если предварительно загруженных данных нет или нужна конкретная категория/страница, делаем API запрос
+    
     let response;
     if (category) {
       // Если указана категория, получаем статьи только этой категории
@@ -73,28 +75,40 @@ const fetchPosts = async (page = 1) => {
     }
     
     if (response.data && typeof response.data === 'object') {
-      const apiData = response.data as unknown as ApiResponse;
+      // Сначала проверяем, что response.data содержит ожидаемую структуру
+      const apiData = response.data as any;
       
-      if (apiData.pagination) {
-        totalPages.value = apiData.pagination.pages_total || 1;
-        currentPage.value = page;
-      }
-      
-      if (apiData.category) {
-        categoryName.value = apiData.category.name || null;
-      } else {
+      // Если это прямой массив статей (для простых случаев)
+      if (Array.isArray(apiData)) {
+        posts.value = apiData;
+        totalPages.value = 1;
+        currentPage.value = 1;
         categoryName.value = null;
-      }
-      
-      if (apiData.posts && Array.isArray(apiData.posts)) {
-        posts.value = apiData.posts;
-      } else {
-        posts.value = [];
+      } 
+      // Если это структура с полями location, category, pagination, posts (основной формат API)
+      else if (apiData && typeof apiData === 'object') {
+        if (apiData.pagination) {
+          totalPages.value = apiData.pagination.pages_total || 1;
+          currentPage.value = page;
+        }
+        
+        if (apiData.category) {
+          categoryName.value = apiData.category.name || null;
+        } else {
+          categoryName.value = null;
+        }
+        
+        if (apiData.posts && Array.isArray(apiData.posts)) {
+          posts.value = apiData.posts;
+        } else {
+          posts.value = [];
+        }
       }
     }
   } catch (err) {
     error.value = 'Не удалось загрузить статьи. Пожалуйста, попробуйте позже.';
     posts.value = [];
+          // Тихо обрабатываем ошибку загрузки
   } finally {
     isLoading.value = false;
   }
@@ -129,8 +143,8 @@ const blogSchema = computed(() => ({
   },
   'blogPost': posts.value.map(post => ({
     '@type': 'BlogPosting',
-    'headline': post.title.rendered,
-    'description': post.excerpt.rendered,
+    'headline': post.title,
+    'description': post.excerpt || `Статья: ${post.title}`,
     'datePublished': post.date,
     'dateModified': post.modified,
     'author': {
@@ -149,7 +163,7 @@ const blogSchema = computed(() => ({
       '@type': 'WebPage',
       '@id': `/statji/${post.slug}`
     },
-    'image': post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '/images/logo.svg'
+    'image': post.img?.webp_full || post.img?.full || '/images/logo.svg'
   }))
 }));
 
@@ -162,6 +176,37 @@ useHead({
     }
   ]
 });
+
+// Инициализация SEO с правильной обработкой пагинации
+const updateSeo = () => {
+  const baseTitle = categoryName.value 
+    ? `Статьи категории "${categoryName.value}" — Оборудование для бурения №1 в России` 
+    : 'Статьи — Оборудование для бурения №1 в России';
+  const baseDescription = categoryName.value
+    ? `Полезные статьи в категории "${categoryName.value}" об оборудовании для бурения скважин, технологиях и лучших практиках в отрасли.`
+    : 'Полезные статьи и материалы об оборудовании для бурения скважин, технологиях и лучших практиках в отрасли.';
+  const basePath = categorySlug.value ? `/statji/category/${categorySlug.value}` : '/statji';
+  
+  // Open Graph изображение для статей - используем изображение первой статьи или дефолтное
+  const ogImage = posts.value.length > 0 && posts.value[0].img?.webp_full
+    ? posts.value[0].img.webp_full || posts.value[0].img?.full
+    : `https://burspb.com/api/files/og-image-articles.jpg`;
+  
+  const ogType = getOpenGraphType('website');
+
+  useSeoWithPagination({
+    title: baseTitle,
+    description: baseDescription,
+    currentPage: currentPage.value,
+    basePath,
+    image: ogImage,
+    type: ogType
+  });
+};
+
+// Обновляем SEO при изменении данных
+watch([currentPage, categoryName, categorySlug], updateSeo);
+watch(() => route.params.category, updateSeo, { immediate: true });
 </script>
 
 <template>
@@ -172,10 +217,10 @@ useHead({
 
       <section class="section recent-posts">
         <div class="section-title">
-          <h3 class="section-title-tag" v-if="categoryName">
+          <h1 class="section-title-tag" v-if="categoryName">
             Статьи категории "{{ categoryName }}"
-          </h3>
-          <h3 class="section-title-tag" v-else>Все статьи</h3>
+          </h1>
+          <h1 class="section-title-tag" v-else>Все статьи</h1>
         </div>
 
         <div v-if="isLoading" class="loading">

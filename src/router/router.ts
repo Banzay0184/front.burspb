@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createMemoryHistory } from 'vue-router';
 import HomePage from '../pages/HomePage.vue';
 import CatalogPage from '../pages/Catalog/CatalogPage.vue';
 import StatjiPage from '../pages/Statji/StatjiPage.vue';
@@ -12,11 +12,13 @@ import CategoryBurovyeDolota from '../pages/Catalog/CategoryBurovyeDolota.vue';
 import CatalogDetail from '../pages/Catalog/CatalogDetail.vue';
 import BasketPage from '../pages/Basket/BasketPage.vue';
 import ConfirmPage from '../pages/Basket/Confirm/ConfirmPage.vue';
-import ApiTest from '../pages/ApiTest.vue';
 import SearchPage from '../pages/Search/SearchPage.vue';
 import PolicyPage from '../pages/Policy/PolicyPage.vue';
 import TermsPage from '../pages/Terms/TermsPage.vue';
 import CookiePolicyPage from '../pages/CookiePolicy/CookiePolicyPage.vue';
+import SeoDashboard from '../pages/SeoDashboard/SeoDashboard.vue';
+import SeoReport from '../pages/SeoDashboard/SeoReport.vue';
+// SEO управляется через SeoManager компонент
 
 
 const routes = [
@@ -69,7 +71,7 @@ const routes = [
     path: '/basket',
     name: 'BasketPage',
     component: BasketPage,
-    alias: '/basket'
+    alias: '/basket',
   },
   {
     path: '/basket/confirm',
@@ -82,9 +84,14 @@ const routes = [
     component: StatjiDetail,
   },
   {
-    path: '/api-test',
-    name: 'ApiTest',
-    component: ApiTest,
+    path: '/seo-dashboard',
+    name: 'SeoDashboard',
+    component: SeoDashboard,
+  },
+  {
+    path: '/seo-report',
+    name: 'SeoReport',
+    component: SeoReport,
   },
   {
     path: '/catalog/category-:slug',
@@ -129,12 +136,15 @@ const routes = [
   {
     path: '/cookie-policy',
     name: 'CookiePolicyPage',
-    component: CookiePolicyPage,
+    component: CookiePolicyPage,  
   },
 ];
 
+// Экспортируем routes для vite-ssg
+export { routes };
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: typeof window !== 'undefined' ? createWebHistory() : createMemoryHistory(),
   routes,
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
@@ -143,6 +153,42 @@ const router = createRouter({
       return { top: 0 };
     }
   }
+});
+
+// Немедленное обновление canonical URL при изменении роута
+// КРИТИЧЕСКИ ВАЖНО для SEO роботов
+router.afterEach((to) => {
+  
+  // Немедленно обновляем canonical URL с учетом окружения
+  setTimeout(() => {
+    // Определяем BASE_URL динамически для текущего окружения
+    const baseUrl = typeof window !== 'undefined' 
+      ? (window.location.origin.includes('localhost') ? window.location.origin : 'https://burspb.com')
+      : 'https://burspb.com';
+    
+    let canonicalUrl = `${baseUrl}${to.path}`;
+    
+    // Для главной страницы убираем слэш в конце только для продакшн
+    if (to.path === '/' && !baseUrl.includes('localhost')) {
+      canonicalUrl = 'https://burspb.com';
+    }
+    
+    // Для страниц пагинации canonical указывает на первую страницу
+    if (to.path.includes('/page/')) {
+      const basePath = to.path.replace(/\/page\/\d+$/, '');
+      canonicalUrl = `${baseUrl}${basePath}`;
+    }
+    
+      // Обновляем canonical link
+  let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+  if (!canonicalLink) {
+    canonicalLink = document.createElement('link');
+    canonicalLink.setAttribute('rel', 'canonical');
+    document.head.appendChild(canonicalLink);
+  }
+  
+  canonicalLink.href = canonicalUrl;
+  }, 50); // Минимальная задержка для DOM обновления
 });
 
 export default router;

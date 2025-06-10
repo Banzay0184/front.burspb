@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useHead } from '@vueuse/head';
-import apiService from '../api/api';
+import { useGlobalsSSG } from '../composables/useGlobalsSSG';
 
 const siteTitle = ref('Оборудование для бурения №1 в России');
 
+const { loadGlobals } = useGlobalsSSG();
+
 const fetchGlobalData = async () => {
   try {
-    const response = await apiService.getGlobals();
-    if (response.data && response.data.siteTitle) {
-      siteTitle.value = response.data.siteTitle;
+    const globalsData = await loadGlobals();
+    if (globalsData && globalsData.siteTitle) {
+      siteTitle.value = globalsData.siteTitle;
     }
   } catch (error) {
   }

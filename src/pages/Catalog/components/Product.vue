@@ -4,6 +4,7 @@ import { useHead } from '@vueuse/head';
 import ModalWindow from '../../../components/ModalWindow.vue';
 import Tabs from './Tabs.vue';
 import { CartService } from '../../../api/api';
+import { useNotifications } from '../../../composables/useNotifications';
 
 // Интерфейс для данных продукта
 interface ProductProps {
@@ -81,6 +82,9 @@ const emit = defineEmits(['add-to-cart']);
 // Состояние модального окна
 const isModalVisible = ref(false);
 
+// Инициализация уведомлений
+const { showNotificationMessage } = useNotifications();
+
 // Проверяем, есть ли товар в корзине
 const isInCart = computed(() => {
   return CartService.isInCart(props.productData.id);
@@ -107,6 +111,13 @@ const closeModal = () => {
 
 // Добавить товар в корзину
 const addToCart = () => {
+  // Формируем сообщение для уведомления
+  const notificationText = !props.productData.availability 
+    ? `Товар "${props.productData.title}" добавлен в корзину (под заказ)`
+    : `Товар "${props.productData.title}" добавлен в корзину`;
+  
+  // Показываем уведомление
+  showNotificationMessage(notificationText);
   
   if (isInCart.value) {
     // Если товар уже в корзине, увеличиваем количество
@@ -134,6 +145,8 @@ const addToCart = () => {
 const decreaseQuantity = () => {
   if (itemQuantity.value > 1) {
     CartService.updateItemQuantity(props.productData.id, itemQuantity.value - 1);
+  } else {
+    CartService.removeFromCart(props.productData.id);
   }
 };
 
@@ -310,10 +323,11 @@ watch(productSchema, (schema) => {
                                 <span v-if="!isInCart" class="button-wrapper">
                                   <button 
                                     class="button button--blue button--basket"
+                                    :class="{ 'button--warning': !productData.availability }"
                                     @click="addToCart"
-                                    :disabled="!productData.availability"
+                                    :title="!productData.availability ? 'Товар под заказ - возможны задержки в поставке' : 'Добавить в корзину'"
                                   >
-                                  В корзину
+                                  {{ !productData.availability ? 'Заказать' : 'В корзину' }}
                                 </button>
                                 </span>
                                 <div v-else class="basket__qty product__basket__qty">
@@ -321,6 +335,7 @@ watch(productSchema, (schema) => {
                                     class="basket__qty__action basket__qty__action--minus" 
                                     :class="{ inactive: itemQuantity <= 1 }"
                                     @click="decreaseQuantity"
+                                    :title="itemQuantity <= 1 ? 'Удалить товар из корзины' : 'Уменьшить количество'"
                                   >-</span>
                                   <span class="product__basket__qty-value">{{ itemQuantity }}</span>
                                   <span 
@@ -422,5 +437,15 @@ watch(productSchema, (schema) => {
     font-size: 1.1rem;
     color: #aaa;
     padding-top: 1.5rem;
+}
+
+.button--warning {
+  background-color: #ff9800 !important;
+  border-color: #ff9800 !important;
+}
+
+.button--warning:hover {
+  background-color: #f57c00 !important;
+  border-color: #f57c00 !important;
 }
 </style>

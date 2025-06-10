@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { CartService } from '../../api/api';
 import Breadcrumbs from '../../components/Breadcrumbs.vue';
+import { useSeo } from '../../utils/seo';
+import { useRoute } from 'vue-router';
 
 // Состояние корзины
 const cartItems = ref<any[]>([]);
@@ -11,6 +13,16 @@ const isLoading = ref(true);
 const breadcrumbs = ref([
   { title: 'Корзина', url: '' }
 ]);
+
+// Получаем роутер и текущий маршрут
+const route = useRoute();
+
+// Инициализация SEO
+useSeo({
+  title: route.meta.title as string,
+  description: route.meta.description as string,
+  canonical: route.fullPath
+});
 
 // Загрузка данных корзины
 const loadCart = () => {
@@ -207,7 +219,7 @@ onUnmounted(() => {
       <!-- Показываем сообщение о пустой корзине, если в ней нет товаров -->
       <article v-else class="post">
         <header>
-          <h1 class="title post__title">Корзина</h1>
+          <h2 class="title post__title">Ваша корзина пуста</h2>
         </header>
         <section class="content post__content">
           <div>
