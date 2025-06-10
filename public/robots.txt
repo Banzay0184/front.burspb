@@ -1,0 +1,63 @@
+# Robots.txt file for БурСПб
+# Generated for production SEO optimization
+
+# Общие правила для всех роботов
+User-agent: *
+Allow: /
+
+# Запрещаем индексацию служебных страниц и файлов
+Disallow: /basket
+Disallow: /search
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dist/
+Disallow: /node_modules/
+Disallow: /*.json$
+Disallow: /*.js$
+Disallow: /*.css$
+Disallow: /*.map$
+Disallow: /*.ts$
+Disallow: /*.vue$
+
+# Разрешаем изображения и медиа
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.png$
+Allow: /*.webp$
+Allow: /*.svg$
+Allow: /*.ico$
+Allow: /*.pdf$
+
+# Специальные правила для поисковых роботов Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# Специальные правила для Яндекс
+User-agent: Yandexbot
+Allow: /
+Crawl-delay: 1
+
+# Специальные правила для Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Мобильные боты
+User-agent: Googlebot-Mobile
+Allow: /
+Crawl-delay: 1
+
+User-agent: YandexMobileBot
+Allow: /
+Crawl-delay: 1
+
+# Указываем расположение sitemap
+Sitemap: https://burspb.com/sitemap.xml
+
+# Host указывает основной домен (для Яндекса)
+Host: burspb.com
+
+# Общая задержка для остальных ботов
+Crawl-delay: 5
